@@ -1,9 +1,7 @@
 # py-pcqq
-Python语言PCQQ协议简单实现 
+Python语言PCQQ协议简单实现，大概率会鸽。萌新代码写的很烂，大佬多多包涵
 
-萌新代码写的很烂，大佬多多包涵
-
-一时兴起复刻的Python版本，Go版本请移步[go-pcqq](https://github.com/DawnNights/go-pcqq)，均大概率鸽掉
+一时兴起复刻的Python版本，Go版本请移步[go-pcqq](https://github.com/DawnNights/go-pcqq)，视频展示请[点击此处](https://m.bilibili.com/video/BV1J5411T7xJ)
 
 本项目完全使用python3的标准库实现，无需安装第三方依赖
 
