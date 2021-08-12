@@ -7,7 +7,7 @@ class QQClient():
         # domains = "sz.tencent.com|sz2.tencent.com|sz3.tencent.com|sz4.tencent.com|sz5.tencent.com|sz6.tencent.com|sz7.tencent.com|sz8.tencent.com|sz9.tencent.com".split("|")
 
         self._client = socket.socket()
-        self._client.settimeout(6.0)
+        self._client.settimeout(7.0)
         domains = "tcpconn.tencent.com|tcpconn2.tencent.com|tcpconn3.tencent.com|tcpconn4.tencent.com".split("|")
 
         for name in domains:
