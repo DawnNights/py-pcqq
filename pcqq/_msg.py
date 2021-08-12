@@ -6,6 +6,7 @@ def FaceToStr(faceID:int)->str:
 class Message():
     def __init__(self):
         self.MsgType = ""
+        self.MsgId = 0
         self.MsgTime = 0
         self.FromQQ = 0
         self.RecvQQ = 0

@@ -128,6 +128,7 @@ class QQBot(QQUnPack):
             elif src[5:7] == b'\x00\x17':  # 群消息
                 msg = self._unpack0017(src, key)
                 self.QQ.Send(self._pack0017(key[0], src[7:9]))
+                self.QQ.Send(self._pack0002(msg))
             
             if msg != None:
                 for plugin in Plugin.__subclasses__():
@@ -135,11 +136,11 @@ class QQBot(QQUnPack):
                     if demo.match():
                         demo.handle()
         
-        loop = asyncio.get_event_loop()
+        self._loop = asyncio.get_event_loop()
         while True:
             try:
                 # self.QQ.Send(self._pack0058())  # 保持心跳，不要断气
-                loop.run_until_complete(listen(self))
+                self._loop.run_until_complete(listen(self))
             except Exception as err:
                 # 只要我忽略所有异常，程序就不会报错(～￣▽￣)～
                 # print("Error:",err)

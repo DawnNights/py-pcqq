@@ -307,7 +307,7 @@ class QQUnPack(QQPack):
             msg.MsgTime = unpack.GetInt()  # 接收时间
             unpack.GetBin(24)
             unpack.GetInt()  # 发送时间
-            unpack.GetInt()  # 消息ID
+            msg.MsgId = unpack.GetInt()  # 消息ID
             unpack.GetBin(8)
 
             length = int(unpack.GetShort())

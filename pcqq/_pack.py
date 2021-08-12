@@ -14,7 +14,7 @@ class QQPack(object):
         '''
         :param IsLogin: 是否是登录状态
         '''
-        data = b''
+        body = b''
         tea = utils.Tea()
         pack = utils.PackEncrypt()
         self.QQ.RandHead16 = utils.GetRandomBin(16)
@@ -24,7 +24,7 @@ class QQPack(object):
             pack.SetHex("01 02")
             pack.SetShort(len((self.QQ.PublicKey)))
             pack.SetBin(self.QQ.PublicKey)
-            data = tea.Encrypt(pack.GetAll(),self.QQ.RandHead16)
+            body = tea.Encrypt(pack.GetAll(),self.QQ.RandHead16)
 
             pack.Empty()
             pack.SetHex("02 36 39")
@@ -32,9 +32,9 @@ class QQPack(object):
             pack.SetBin(utils.GetRandomBin(2))
             pack.SetHex("00 00 00 00 03 00 00 00 01 01 01 00 00 67 B7 00 00 00 00")
             pack.SetBin(self.QQ.RandHead16)
-            pack.SetBin(data)
+            pack.SetBin(body)
             pack.SetHex("03")
-            data = pack.GetAll()
+            body = pack.GetAll()
         else:
             pack.SetHex("00 18 00 16 00 01 00 00 04 4C 00 00 00 01 00 00 15 51")
             pack.SetBin(self.QQ.BinQQ)
@@ -44,7 +44,7 @@ class QQPack(object):
             pack.SetHex("01 02")
             pack.SetShort(len(self.QQ.PublicKey))
             pack.SetBin(self.QQ.PublicKey)
-            data = tea.Encrypt(pack.GetAll(),self.QQ.RandHead16)
+            body = tea.Encrypt(pack.GetAll(),self.QQ.RandHead16)
 
             pack.Empty()
             pack.SetHex("02 36 39")
@@ -53,10 +53,10 @@ class QQPack(object):
             pack.SetBin(self.QQ.BinQQ)
             pack.SetHex("03 00 00 00 01 01 01 00 00 67 B7 00 00 00 00")
             pack.SetBin(self.QQ.RandHead16)
-            pack.SetBin(data)
+            pack.SetBin(body)
             pack.SetHex("03")
-            data = pack.GetAll()
-        return data
+            body = pack.GetAll()
+        return body
 
     def _pack0818(self) -> bytes:
         '''获取二维码'''
@@ -70,7 +70,7 @@ class QQPack(object):
         pack.SetShort(len(self.QQ.PublicKey))
         pack.SetBin(self.QQ.PublicKey)
         pack.SetHex("03 05 00 1E 00 00 00 00 00 00 00 05 00 00 00 04 00 00 00 00 00 00 00 48 00 00 00 02 00 00 00 02 00 00")
-        data = tea.Encrypt(pack.GetAll(),self.QQ.RandHead16)
+        body = tea.Encrypt(pack.GetAll(),self.QQ.RandHead16)
 
         pack.Empty()
         pack.SetHex("02 36 39")
@@ -78,11 +78,11 @@ class QQPack(object):
         pack.SetBin(utils.GetRandomBin(2))
         pack.SetHex("00 00 00 00 03 00 00 00 01 01 01 00 00 67 B7 00 00 00 00")
         pack.SetBin(self.QQ.RandHead16)
-        pack.SetBin(data)
+        pack.SetBin(body)
         pack.SetHex("03")
-        data = pack.GetAll()
+        body = pack.GetAll()
 
-        return data
+        return body
 
     def _pack0819(self,codeId: str, IsLogin: bool=False) -> bytes:
         '''
@@ -101,7 +101,7 @@ class QQPack(object):
         pack.SetStr(codeId)
         if IsLogin:
             pack.SetHex("03 14 00 02 00 00")
-        data = tea.Encrypt(pack.GetAll(),self.QQ.PcKeyFor0819)
+        body = tea.Encrypt(pack.GetAll(),self.QQ.PcKeyFor0819)
 
         pack.Empty()
         pack.SetHex("02 36 39")
@@ -110,11 +110,11 @@ class QQPack(object):
         pack.SetHex("00 00 00 00 03 00 00 00 01 01 01 00 00 67 B7 00 00 00 00 00 30 00 3A")
         pack.SetShort(len(self.QQ.PcToken0038From0818))
         pack.SetBin(self.QQ.PcToken0038From0818)
-        pack.SetBin(data)
+        pack.SetBin(body)
         pack.SetHex("03")
-        data = pack.GetAll()
+        body = pack.GetAll()
 
-        return data
+        return body
 
     def _pack0836(self) -> bytes:
         tlv = utils.Tlv()
@@ -137,7 +137,7 @@ class QQPack(object):
         pack.SetBin(tlv.Tlv508())
         pack.SetBin(tlv.Tlv313())
         pack.SetBin(tlv.Tlv102(self.QQ.PcToken0038From0825))
-        data = tea.Encrypt(pack.GetAll(),self.QQ.ShareKey)
+        body = tea.Encrypt(pack.GetAll(),self.QQ.ShareKey)
 
         pack.Empty()
         pack.SetHex("02 36 39")
@@ -150,10 +150,10 @@ class QQPack(object):
         pack.SetBin(self.QQ.PublicKey)
         pack.SetHex("00 00 00 10")
         pack.SetBin(self.QQ.RandHead16)
-        pack.SetBin(data)
+        pack.SetBin(body)
         pack.SetHex("03")
-        data = pack.GetAll()
-        return data
+        body = pack.GetAll()
+        return body
 
     def _pack0828(self) -> bytes:
         tlv = utils.Tlv()
@@ -171,7 +171,7 @@ class QQPack(object):
         pack.SetBin(tlv.Tlv105())
         pack.SetBin(tlv.Tlv10B())
         pack.SetBin(tlv.Tlv02D())
-        data = tea.Encrypt(pack.GetAll(),self.QQ.PcKeyFor0828Send)
+        body = tea.Encrypt(pack.GetAll(),self.QQ.PcKeyFor0828Send)
 
         pack.Empty()
         pack.SetHex("02 36 39")
@@ -181,10 +181,10 @@ class QQPack(object):
         pack.SetHex("02 00 00 00 01 01 01 00 00 67 B7 00 30 00 3A")
         pack.SetShort(len((self.QQ.PcToken0038From0836)))
         pack.SetBin(self.QQ.PcToken0038From0836)
-        pack.SetBin(data)
+        pack.SetBin(body)
         pack.SetHex("03")
-        data = pack.GetAll()
-        return data
+        body = pack.GetAll()
+        return body
 
     def _pack001D(self) -> bytes:
         '''更新Clientkey'''
@@ -194,7 +194,7 @@ class QQPack(object):
         pack.Empty()
 
         pack.SetHex("11")
-        data = tea.Encrypt(pack.GetAll(),self.QQ.SessionKey)
+        body = tea.Encrypt(pack.GetAll(),self.QQ.SessionKey)
 
         pack.Empty()
         pack.SetHex("02 36 39")
@@ -202,10 +202,10 @@ class QQPack(object):
         pack.SetBin(utils.GetRandomBin(2))
         pack.SetBin(self.QQ.BinQQ)
         pack.SetHex("02 00 00 00 01 01 01 00 00 67 B7")
-        pack.SetBin(data)
+        pack.SetBin(body)
         pack.SetHex("03")
-        data = pack.GetAll()
-        return data
+        body = pack.GetAll()
+        return body
 
     def _pack00EC(self,state: int) -> bytes:
         '''
@@ -238,17 +238,17 @@ class QQPack(object):
             pack.SetHex("0A")
 
         pack.SetHex("00 01 00 01 00 04 00 00 00 00")
-        data = tea.Encrypt(pack.GetAll(),self.QQ.SessionKey)
+        body = tea.Encrypt(pack.GetAll(),self.QQ.SessionKey)
         pack.Empty()
         pack.SetHex("02 36 39")
         pack.SetHex("00 EC")
         pack.SetBin(utils.GetRandomBin(2))
         pack.SetBin(self.QQ.BinQQ)
         pack.SetHex("02 00 00 00 01 01 01 00 00 67 B7")
-        pack.SetBin(data)
+        pack.SetBin(body)
         pack.SetHex("03")
-        data = pack.GetAll()
-        return data
+        body = pack.GetAll()
+        return body
 
 
     def _pack0017(self, sendData: bytes, sequence: bytes) -> bytes:
@@ -262,7 +262,7 @@ class QQPack(object):
 
         pack.Empty()
         pack.SetBin(sendData)
-        data = tea.Encrypt(pack.GetAll(),self.QQ.SessionKey)
+        body = tea.Encrypt(pack.GetAll(),self.QQ.SessionKey)
 
         pack.Empty()
         pack.SetHex("02 36 39")
@@ -270,11 +270,11 @@ class QQPack(object):
         pack.SetBin(sequence)
         pack.SetBin(self.QQ.BinQQ)
         pack.SetHex("02 00 00 00 01 01 01 00 00 67 B7")
-        pack.SetBin(data)
+        pack.SetBin(body)
 
         pack.SetHex("03")
-        data = pack.GetAll()
-        return data
+        body = pack.GetAll()
+        return body
 
     def _pack00CE(self,sendData: bytes, sequence: bytes) -> bytes:
         '''
@@ -287,7 +287,7 @@ class QQPack(object):
 
         pack.Empty()
         pack.SetBin(sendData)
-        data = tea.Encrypt(sendData,self.QQ.SessionKey)
+        body = tea.Encrypt(sendData,self.QQ.SessionKey)
 
         pack.Empty()
         pack.SetHex("02 36 39")
@@ -295,11 +295,11 @@ class QQPack(object):
         pack.SetBin(sequence)
         pack.SetBin(self.QQ.BinQQ)
         pack.SetHex("02 00 00 00 01 01 01 00 00 67 B7")
-        pack.SetBin(data)
+        pack.SetBin(body)
 
         pack.SetHex("03")
-        data = pack.GetAll()
-        return data
+        body = pack.GetAll()
+        return body
 
     def _pack0002(self, groupId: int, content: str) -> bytes:
         '''
@@ -322,14 +322,14 @@ class QQPack(object):
         pack.SetHex("01")
         pack.SetShort(len(Msg))
         pack.SetBin(Msg)
-        data = pack.GetAll()
+        body = pack.GetAll()
 
         pack.Empty()
         pack.SetHex("2A")
         pack.SetInt(groupId)
-        pack.SetShort(len(data))
-        pack.SetBin(data)
-        data = tea.Encrypt(pack.GetAll(),self.QQ.SessionKey)
+        pack.SetShort(len(body))
+        pack.SetBin(body)
+        body = tea.Encrypt(pack.GetAll(),self.QQ.SessionKey)
 
         pack.Empty()
         pack.SetHex("02 36 39")
@@ -337,10 +337,10 @@ class QQPack(object):
         pack.SetBin(utils.GetRandomBin(2))
         pack.SetBin(self.QQ.BinQQ)
         pack.SetHex("02 00 00 00 01 01 01 00 00 67 B7")
-        pack.SetBin(data)
+        pack.SetBin(body)
         pack.SetHex("03")
-        data = pack.GetAll()
-        return data
+        body = pack.GetAll()
+        return body
         
 
     def _pack00CD(self, userId: int, content: str) -> bytes:
@@ -374,7 +374,7 @@ class QQPack(object):
         pack.SetHex("01")
         pack.SetShort(len(Msg))
         pack.SetBin(Msg)
-        data = tea.Encrypt(pack.GetAll(),self.QQ.SessionKey)
+        body = tea.Encrypt(pack.GetAll(),self.QQ.SessionKey)
 
         pack.Empty()
         pack.SetHex("02 36 39")
@@ -382,10 +382,35 @@ class QQPack(object):
         pack.SetBin(utils.GetRandomBin(2))
         pack.SetBin(self.QQ.BinQQ)
         pack.SetHex("02 00 00 00 01 01 01 00 00 67 B7")
-        pack.SetBin(data)
+        pack.SetBin(body)
         pack.SetHex("03")
-        data = pack.GetAll()
-        return data
+        body = pack.GetAll()
+        return body
+    
+    def _pack0002(self, msg:Message)->bytes:
+        '''群消息回执包'''
+        tea = utils.Tea()
+        pack = utils.PackEncrypt()
+
+        pack.Empty()
+        pack.SetHex("29")
+        pack.SetBin(utils.GroupToGid(msg.FromGroup).to_bytes(4,"big"))
+        pack.SetHex("02")
+        pack.SetBin(msg.MsgId.to_bytes(4,"big"))
+        body = tea.Encrypt(pack.GetAll(),self.QQ.SessionKey)
+
+        pack.Empty()
+        pack.SetHex("02 36 39")
+        pack.SetHex("00 02")
+        pack.SetBin(utils.GetRandomBin(2))
+        pack.SetBin(self.QQ.BinQQ)
+        pack.SetHex("02 00 00 00 01 01 01 00 00 67 B7")
+        pack.SetBin(body)
+        pack.SetHex("03")
+
+        body = pack.GetAll()
+        return body
+
     
     def _pack0319(self, msg:Message)->bytes:
         '''好友消息回执包'''
@@ -422,30 +447,32 @@ class QQPack(object):
         body = pack.GetAll()
         return body
 
-
-
     def _pack0058(self):
         '''心跳包'''
         tea = utils.Tea()
         pack = utils.PackEncrypt()
+
         pack.Empty()
         pack.SetBin(self.QQ.Utf8QQ)
-        data = tea.Encrypt(pack.GetAll())
+        body = tea.Encrypt(pack.GetAll())
+
         pack.Empty()
         pack.SetHex("02 36 39")
         pack.SetHex("00 58")
         pack.SetBin(utils.GetRandomBin(2))
         pack.SetBin(self.QQ.BinQQ)
         pack.SetHex("02 00 00 00 01 01 01 00 00 67 B7")
-        pack.SetBin(data)
+        pack.SetBin(body)
         pack.SetHex("03")
-        data = pack.GetAll()
-        return data
+
+        body = pack.GetAll()
+        return body
     
     def _pack0062(self)->bytes:
         '''离线包'''
         tea = utils.Tea()
         pack = utils.PackEncrypt()
+
         pack.Empty()
         pack.SetHex("02 36 39")
         pack.SetHex("00 62")
@@ -454,5 +481,6 @@ class QQPack(object):
         pack.SetHex("02 00 00 00 01 01 01 00 00 67 B7 00 30 00 3A")
         pack.SetBin(tea.Encrypt(b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00', self.QQ.SessionKey))
         pack.SetHex("03")
-        data = pack.GetAll()
-        return data
+        
+        body = pack.GetAll()
+        return body
