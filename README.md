@@ -1,19 +1,41 @@
 # py-pcqq
-Python语言PCQQ协议简单实现，大概率会鸽。萌新代码写的很烂，大佬多多包涵
 
-一时兴起复刻的Python版本，Go版本请移步[go-pcqq](https://github.com/DawnNights/go-pcqq)，视频展示请[点击此处](https://m.bilibili.com/video/BV1J5411T7xJ)
+Python语言PCQQ协议的简单封装，萌新代码写的很烂，大佬多多包涵
 
-本项目完全使用python3的标准库实现，无需安装第三方依赖
+本作品完全使用python3的标准库实现，无需安装第三方依赖
 
-使用[青云客](http://api.qingyunke.com)聊天接口做了个聊天交互式的机器人Demo，详情请看代码
+仅支持扫码登录
 
-# 实现
-- [x] 扫码登录
-- [x] 发送群消息
-- [x] 发送好友消息
-- [x] 群消息接收(仅解析纯文本/表情/图片)
-- [x] 好友消息接收(同上)
+支持群消息/好友消息的接收(仅解析文本、表情与图片)
+
+支持群消息/好友消息的发送(仅支持纯文本)
+
+# How to use
+
+请参考以下写法
+
+``` bash
+import pcqq
+
+bot = pcqq.QQBot()
+
+class TestPluginA(pcqq.Plugin):
+    def match(self) -> bool:
+        return self.on_full_match("hellp")
+    
+    def handle(self):
+        self.send_msg("hello world")
+
+class TestPluginB(pcqq.Plugin):
+    def match(self) -> bool:
+        return self.on_reg_match("复读\s(.*)")
+    
+    def handle(self):
+        self.send_msg(self.Args[0])
+
+bot.ListenMsg()
+```
 
 # 特别感谢
 - [Py3QQTEA](https://github.com/ColasDAD/Py3QQTEA)
-- [青云客聊天API](http://api.qingyunke.com)
+- [voidbot](https://github.com/FloatTech/voidbot)

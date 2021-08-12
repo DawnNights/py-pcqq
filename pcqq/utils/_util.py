@@ -30,19 +30,3 @@ def HashMD5(src: bytes)->bytes:
             dst += int_hex.to_bytes(1,"big")
             s = ""
     return dst
-
-def PbToLength(num:int)->str :
-    '''特殊加密'''
-    temp = ""
-    binary = bin(num)[2:]
-    while len(binary) > 0:
-        binary1 = "0000000" + binary
-        temp = temp + "1" + binary1[-7:]
-        if len(binary) >= 7:
-            binary = binary[0:-7]
-        else:
-            break
-    temp1 = temp[-7:]
-    temp = temp[0:-8] + "0" + temp1
-    temp = hex(int("0b"+temp,2)).upper()[2:]
-    return " ".join(findall(".{2}",temp))

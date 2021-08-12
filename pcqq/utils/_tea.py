@@ -1,6 +1,5 @@
 import struct
 
-
 class Tea():
     def xor(self, a, b):
         op = 0xffffffff
