@@ -12,7 +12,9 @@ Python语言PCQQ协议的简单封装，萌新代码写的很烂，大佬多多�
 
 # How to use
 
-请参考以下写法
+首先pip install py-pcqq安装该协议库
+
+随后请参考以下写法
 
 ``` bash
 import pcqq
