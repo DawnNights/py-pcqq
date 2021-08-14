@@ -1,10 +1,9 @@
-from re import findall
-from hashlib import md5
-from random import randint
+import random
+import hashlib
 
 def GetRandomBin(length: int)->bytes:
     '''生成指定长度的随机字节集'''
-    dst = [randint(0,255).to_bytes(1,"big") for x in range(length)]
+    dst = [random.randint(0,255).to_bytes(1,"big") for x in range(length)]
     return b''.join(dst)
 
 def Bin2HexTo(src: bytes)->str:
@@ -21,7 +20,7 @@ def HashMD5(src: bytes)->bytes:
     '''将字节集编码为md5 16bit字节集'''
     s = ""
     dst = b''
-    md = md5(src)
+    md = hashlib.md5(src)
     origin = md.hexdigest()
     for i in range(len(origin)):
         s += origin[i]

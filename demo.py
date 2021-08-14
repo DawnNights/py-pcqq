@@ -1,16 +1,16 @@
-from pcqq._core import QQBot,Plugin
+import pcqq
+bot = pcqq.QQBot()
 
-bot = QQBot()
-
-class DemoPluginA(Plugin):
-    def match(self) -> bool:
-        return self.on_full_match("hello")
+class Hello(pcqq.Plugin):
+    def match(self):
+        return self.on_full_match("你好")
     def handle(self):
-        self.send_msg("hello world")
+        self.send_msg("你也好呀")
 
-class DemoPluginB(Plugin):
-    def match(self) -> bool:
-        return self.on_re_match("复读\s(.*)")
+class Reread(pcqq.Plugin):
+    def match(self):
+        return self.on_reg_match("复读\s(.*)")
+    
     def handle(self):
         self.send_msg(self.Args[0])
 

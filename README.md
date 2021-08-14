@@ -12,30 +12,27 @@ Python语言PCQQ协议的简单封装，萌新代码写的很烂，大佬多多�
 
 # How to use
 
-首先pip install py-pcqq安装该协议库
-
-随后请参考以下写法
+请参考demo.py中的写法
 
 ``` bash
 import pcqq
-
 bot = pcqq.QQBot()
 
-class TestPluginA(pcqq.Plugin):
-    def match(self) -> bool:
-        return self.on_full_match("hellp")
-    
+class Hello(pcqq.Plugin):
+    def match(self):
+        return self.on_full_match("你好")
     def handle(self):
-        self.send_msg("hello world")
+        self.send_msg("你也好呀")
 
-class TestPluginB(pcqq.Plugin):
-    def match(self) -> bool:
+class Reread(pcqq.Plugin):
+    def match(self):
         return self.on_reg_match("复读\s(.*)")
     
     def handle(self):
         self.send_msg(self.Args[0])
 
 bot.ListenMsg()
+
 ```
 
 # 特别感谢

@@ -1,6 +1,6 @@
 from ._tea import Tea
 from ._util import GetRandomBin
-from ._packet import PackEncrypt
+from ._pack import PackEncrypt
 
 
 class Tlv():
