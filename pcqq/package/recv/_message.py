@@ -66,7 +66,7 @@ def UnPack_0017(QQ, src: bytes, msg):
     dst = unpack.GetAll()
     dst = dst[0:len(dst) - 1]
     dst = tea.Decrypt(dst, QQ.SessionKey)
-    if len(dst) == 0:
+    if dst == None or len(dst) == 0:
         return False
 
     msg.HeadBody = dst[0:16]

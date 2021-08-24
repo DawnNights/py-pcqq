@@ -16,7 +16,7 @@ class Plugin:
     def __init__(self, bot, msg):
         self.Bot = bot
         self.Msg = msg
-        self.Args = None
+        self.Args = []
 
     def match(self):
         '''判断接收消息是否被匹配'''
@@ -26,14 +26,41 @@ class Plugin:
         '''当消息匹配时所触发的事件'''
         self.send_msg("hello world")
 
-    def on_full_match(self, keyword="") -> bool:
-        '''当接收到的消息是keyword时满足匹配'''
+    def on_full_match(self, keyword:str="") -> bool:
+        '''
+        完全匹配模式->当接收消息为keyword时满足匹配
+        :param keyword: 匹配关键词
+        :return: 是否匹配
+        '''
         return self.Msg.MsgText == keyword
 
-    def on_reg_match(self, pattern="") -> bool:
-        '''当接收的消息满足pattern表达式时触发匹配，并将匹配结果存入self.Args'''
+    def on_reg_match(self, pattern:str="") -> bool:
+        '''
+        正则匹配模式->当该正则解析接收消息结果不为空时完成匹配，解析结果存至Args属性中
+        :param pattern: 匹配表达式
+        :return: 是否匹配
+        '''
         self.Args = re.findall(pattern, self.Msg.MsgText)
         if self.Args != []:
+            return True
+        return False
+
+    def on_common_match(self, keyword:str, promat:str="") -> bool:
+        '''
+        命令匹配模式->当接收消息的开头为keyword时满足匹配，并将参数存至Args属性中；若参数为空且promat不为空字符串，则向发送者索取参数
+        :param keyword: 匹配关键词
+        :param promat: 参数索取语句
+        :return: 是否匹配
+        '''
+        if self.Msg.MsgText.find(keyword) == 0:
+            arg = self.Msg.MsgText[len(keyword):].strip()
+            if arg == "":
+                print(self.Msg.MsgType+"接收参数为空")
+                if promat != "":
+                    self.send_msg(promat)
+                    self.Bot._table[self.Msg.FromQQ] = keyword
+                return False
+            self.Args.append(arg)
             return True
         return False
 
@@ -59,34 +86,49 @@ class QQBot:
         h = threading.Thread(target=self._Heart)
         h.start()
 
-    def ListenMsg(self):
-        '''监听消息'''
-        async def listen(self:QQBot):
-            msg = Message()
-            src = self.Client.Recv()
-            if src[5:7] == USERMESSAGE:  # 好友消息
-                if UnPack_00CE(self.QQ, src, msg):
-                    log.info(f"收到用户({msg.FromQQ})消息: {msg.MsgText}")
-                    self.Client.Send(Pack_00CE(self.QQ, msg.HeadBody, src[7:9]))
-                    self.Client.Send(Pack_0319(self.QQ, msg))
-            elif src[5:7] == GROUPMESSAGE:  # 群消息
-                if UnPack_0017(self.QQ, src, msg):
-                    log.info(f"收到群({msg.FromGroup})消息 {msg.NickName}: {msg.MsgText}")
-                    self.Client.Send(Pack_0017(self.QQ, msg.HeadBody, src[7:9]))
-                    self.Client.Send(Pack_0002_receipt(self.QQ, msg))
-            if msg.MsgText != "":
-                for plugin in Plugin.__subclasses__():
-                    demo = plugin(self, msg)
-                    if demo.match():
-                        demo.handle()
+    def ListenMsg(self)->Message:
+        '''监听一条消息'''
+        msg = Message()
+        src = self.Client.Recv()
 
+        if src[5:7] == USERMESSAGE:  # 好友消息
+            if UnPack_00CE(self.QQ, src, msg):
+                log.info(f"收到用户({msg.FromQQ})消息: {msg.MsgText}")
+                self.Client.Send(Pack_00CE(self.QQ, msg.HeadBody, src[7:9]))
+                self.Client.Send(Pack_0319(self.QQ, msg))
+        elif src[5:7] == GROUPMESSAGE:  # 群消息
+            if UnPack_0017(self.QQ, src, msg):
+                log.info(f"收到群({msg.FromGroup})消息 {msg.NickName}: {msg.MsgText}")
+                self.Client.Send(Pack_0017(self.QQ, msg.HeadBody, src[7:9]))
+                self.Client.Send(Pack_0002_receipt(self.QQ, msg))
+        
+        return msg
+
+    def CallPlugin(self, msg:Message):
+        '''执行编写的插件功能'''
+        for plugin in Plugin.__subclasses__():
+            demo = plugin(self, msg)
+            if demo.match():
+                demo.handle()
+    
+    def RunBot(self):
+        '''开始运行机器人'''
+        self._table = {}
         loop = asyncio.get_event_loop()
+
+        async def repeat(bot:QQBot):
+            msg = bot.ListenMsg()
+            if msg.FromQQ in bot._table.keys():
+                msg.MsgText = bot._table[msg.FromQQ] + msg.MsgText
+                bot._table.pop(msg.FromQQ)
+            bot.CallPlugin(msg)
+
         while True:
             try:
-                loop.run_until_complete(listen(self))
+                loop.run_until_complete(repeat(self))
             except:
-                pass    # 只要我忽略所有异常，程序就不会报错(～￣▽￣)～
-
+                pass    # 忽略所有异常使程序正常运行
+    
     def SendGroupMsg(self, groupID:int, msgText:str):
         '''
         发送群消息
