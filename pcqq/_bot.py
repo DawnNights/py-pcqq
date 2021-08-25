@@ -55,7 +55,6 @@ class Plugin:
         if self.Msg.MsgText.find(keyword) == 0:
             arg = self.Msg.MsgText[len(keyword):].strip()
             if arg == "":
-                print(self.Msg.MsgType+"接收参数为空")
                 if promat != "":
                     self.send_msg(promat)
                     self.Bot._table[self.Msg.FromQQ] = keyword
