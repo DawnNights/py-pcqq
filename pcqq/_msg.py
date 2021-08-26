@@ -36,8 +36,7 @@ class Message:
                 text = unpack.GetBin(length).decode()
                 if text[0] == "@" and pos + dataLen - unpack.GetPosition() == 16:
                     unpack.GetBin(10)
-                    self.MsgText += text
-                    unpack.GetInt()
+                    self.MsgText += f"[PQ:at,qq={unpack.GetInt()}]"
                 else:
                     self.MsgText += text
 
@@ -47,7 +46,11 @@ class Message:
             elif msgType == 3:  # 图片
                 picStr = unpack.GetBin(length).decode()
                 picStr = picStr[1:picStr.find("}")].replace("-", "")
-                self.MsgText += f"[PQ:image,file=https://gchat.qpic.cn/gchatpic_new/0/0-0-{picStr}/0?term=3]"
+                self.MsgText += f"[PQ:image,url=https://gchat.qpic.cn/gchatpic_new/0/0-0-{picStr}/0?term=3]"
+            
+            elif msgType == 6:  # 好友图片
+                picStr = unpack.GetBin(length).decode()
+                self.MsgText += f"[PQ:image,file={picStr}]"
 
             unpack.GetBin(pos + dataLen - unpack.GetPosition())
             msgType = unpack.GetByte()

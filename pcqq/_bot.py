@@ -44,6 +44,23 @@ class Plugin:
         if self.Args != []:
             return True
         return False
+    
+    def is_at_me(self) -> bool:
+        '''
+        判断机器人是否被艾特
+        '''
+        if f"[PQ:at,qq={self.Bot.LongQQ}]" in self.Msg.MsgText:
+            self.Msg.MsgText = self.Msg.MsgText.replace(f"[PQ:at,qq={self.Bot.LongQQ}]","")
+            return True
+        return False
+    
+    def is_admin_user(self) -> bool:
+        '''
+        判断消息发送者是否为机器人的主人
+        '''
+        if self.Msg.FromQQ in self.Bot.adminUsers:
+            return True
+        return False
 
     def on_common_match(self, keyword:str, promat:str="") -> bool:
         '''
@@ -70,7 +87,12 @@ class Plugin:
             self.Bot.SendGroupMsg(self.Msg.FromGroup, msgText)
 
 class QQBot:
-    def __init__(self):
+    def __init__(self, adminUsers:list=[]):
+        '''
+        :param adminUser: 机器人管理者的QQ
+        '''
+        self.adminUsers = adminUsers
+
         self.QQ = QQStruct()
         self.QQ.RandHead16 = utils.GetRandomBin(16)
         self.QQ.ShareKey = utils.Hex2Bin("FD 0B 79 78 31 E6 88 54 FC FA EA 84 52 9C 7D 0B")

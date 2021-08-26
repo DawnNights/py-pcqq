@@ -1,14 +1,14 @@
 # py-pcqq
 
-- Python语言PCQQ协议的简单封装，萌新代码写的很烂，大佬多多包涵
+Python语言PCQQ协议的简单封装，萌新代码写的很烂，大佬多多包涵
 
-- 本作品完全使用python3的标准库实现，无需安装第三方依赖
+本作品完全使用python3的标准库实现，无需安装第三方依赖
 
-- 仅支持扫码登录
+仅支持扫码登录
 
-- 支持群消息/好友消息的接收(仅解析文本、表情与图片)
+支持群消息/好友消息的接收(仅解析文本、表情与图片)
 
-- 支持群消息/好友消息的发送(仅支持纯文本)
+支持群消息/好友消息的发送(仅支持纯文本)
 
 # How to use
 
@@ -39,7 +39,17 @@ class Game(pcqq.Plugin):
         return self.on_common_match("猜拳","您要出什么手势呢")
     
     def handle(self):
-        self.send_msg(f"咱的手势是剪刀，您的手势是{self.Args[0]}")
+        point = ["剪刀","石头","布"]
+        winPoint = [("剪刀","石头"),("石头","布"),("布","剪刀")]
+
+        if self.Args[0] in point:
+            result = (__import__("random").choice(point),self.Args[0])
+            if result[0] == result[1]:
+                self.send_msg(f"机器人出{result[0]}，您出{result[1]}，是平局")
+            elif result in winPoint:
+                self.send_msg(f"机器人出{result[0]}，您出{result[1]}，您赢了")
+            else:
+                self.send_msg(f"机器人出{result[0]}，您出{result[1]}，您输了")
 
 bot.RunBot()
 
@@ -61,3 +71,5 @@ bot.RunBot()
 | on_full_match    | 完全匹配消息      | 详见on_full_match方法注释     |
 | on_reg_match     | 正则匹配消息      | 详见on_reg_match方法注释     |
 | on_common_match    | 命令匹配消息      | 详见on_common_match方法注释     |
+| is_at_me     | 是否被at      | 判断接收信息中是否艾特了机器人     |
+| is_admin_user    | 是否是主人      | 判断消息发送者是否是机器人主人     |

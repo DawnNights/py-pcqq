@@ -108,7 +108,6 @@ def UnPack_0017(QQ, src: bytes, msg):
 
             length = unpack.GetShort()
             msg.NickName = unpack.GetBin(length).decode()  # 发消息者昵称
-
             msg.Parse(data[0:pos])
         except Exception as err:
             return False

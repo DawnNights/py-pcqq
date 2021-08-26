@@ -22,6 +22,17 @@ class Game(pcqq.Plugin):
         return self.on_common_match("猜拳","您要出什么手势呢")
     
     def handle(self):
-        self.send_msg(f"咱的手势是剪刀，您的手势是{self.Args[0]}")
+        point = ["剪刀","石头","布"]
+        winPoint = [("剪刀","石头"),("石头","布"),("布","剪刀")]
+
+        if self.Args[0] in point:
+            result = (__import__("random").choice(point),self.Args[0])
+            if result[0] == result[1]:
+                self.send_msg(f"机器人出{result[0]}，您出{result[1]}，是平局")
+            elif result in winPoint:
+                self.send_msg(f"机器人出{result[0]}，您出{result[1]}，您赢了")
+            else:
+                self.send_msg(f"机器人出{result[0]}，您出{result[1]}，您输了")
+
 
 bot.RunBot()
