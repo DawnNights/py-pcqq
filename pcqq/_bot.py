@@ -2,6 +2,7 @@ import re
 import os
 import time
 import asyncio
+import platform
 import threading
 import logging as log
 from pcqq.package import *
@@ -191,17 +192,19 @@ class QQBot:
         self.Client.Send(Pack_0818(self.QQ))
         QrCodeID, QrCodeImg = UnPack_0818(self.QQ, self.Client.Recv())
 
-        # 保存登录二维码至savePath
-        savePath = os.getcwd() + "\\QrCode.jpg"
         while True:
             try:
-                with open(savePath, "wb") as f:
+                with open("QrCode.jpg", "wb") as f:
                     f.write(QrCodeImg)
                 break
             except:
                 continue
-        log.info("登录二维码获取成功，已保存至"+savePath)
-        os.startfile(savePath)
+
+        if platform.system() == "Windows":
+            log.info("登录二维码获取成功，已保存至"+os.getcwd()+"\\QrCode.jpg")
+            os.startfile("QrCode.jpg")
+        else:
+            log.info("登录二维码获取成功，已保存至"+os.getcwd()+"/QrCode.jpg")
 
         # 等待扫码登录
         stateID = -1
