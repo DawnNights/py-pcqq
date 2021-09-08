@@ -1,5 +1,5 @@
 """
-Created on Mon Aug 25 at 18:02 2021
+Created on Tue Sep 7 at 20:02 2021
 
 用前须知:
 1. py-pcqq，这是一个本萌新使用Python编写的QQBot库，基于PC版QQ协议
@@ -20,11 +20,9 @@ Created on Mon Aug 25 at 18:02 2021
 
 注意事项: 
 1. 该协议库暂时只能使用扫码登录
-2. 机器人能发送的消息包括(纯文本)
-3. 机器人能接收的消息包括(at, 文本, 图片, 表情)
+2. 该协议库能发送的消息包括(at, 文本, 表情, xml卡片)
+3. 该协议库能接收的消息包括(at, 文本, 图片, 表情, xml卡片)
+4. 该协议库目前bug贼多，坐等一个大佬带我QAQ
 """
-from ._msg import Message
-from ._bot import QQBot, Plugin
 
-from ._client import QQClient
-from ._struct import QQStruct
+from ._bot import QQBot, Plugin

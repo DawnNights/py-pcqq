@@ -2,76 +2,77 @@
 
 Python语言PCQQ协议的简单封装，萌新代码写的很烂，大佬多多包涵
 
-本作品完全使用python3的标准库实现，无需安装第三方依赖
+# 已实现功能
 
-仅支持扫码登录
+#### 登录
+- [x] 扫码登录
+- [x] 退出登录
 
-支持群消息/好友消息的接收(仅解析文本、表情与图片)
+#### 发送消息
+- [x] At
+- [x] 文本
+- [x] 表情
+- [x] Xml卡片
 
-支持群消息/好友消息的发送(仅支持纯文本)
-
-(本项目近期可能进行重大重构，借助第三方库的帮助写成一份完善的协议实现，并另开一份用标准库实现的lite版本)
+#### 接收消息
+- [x] At
+- [x] 文本
+- [x] 图片
+- [x] 表情
 
 # How to use
-
-请参考demo.py中的写法
-
-``` bash
-import pcqq
-bot = pcqq.QQBot()
-
-# 完全匹配模式
-class Hello(pcqq.Plugin):
-    def match(self):
-        return self.on_full_match("你好")
-    def handle(self):
-        self.send_msg("你也好呀")
-
-# 正则匹配模式
-class Reread(pcqq.Plugin):
-    def match(self):
-        return self.on_reg_match("复读\s(.*)")
-    
-    def handle(self):
-        self.send_msg(self.Args[0])
-
-# 命令匹配模式
-class Game(pcqq.Plugin):
-    def match(self):
-        return self.on_common_match("猜拳","您要出什么手势呢")
-    
-    def handle(self):
-        point = ["剪刀","石头","布"]
-        winPoint = [("剪刀","石头"),("石头","布"),("布","剪刀")]
-
-        if self.Args[0] in point:
-            result = (__import__("random").choice(point),self.Args[0])
-            if result[0] == result[1]:
-                self.send_msg(f"机器人出{result[0]}，您出{result[1]}，是平局")
-            elif result in winPoint:
-                self.send_msg(f"机器人出{result[0]}，您出{result[1]}，您赢了")
-            else:
-                self.send_msg(f"机器人出{result[0]}，您出{result[1]}，您输了")
-
-bot.RunBot()
-
-
-```
 
 #### 创建机器人对象
 1. 创建一个pcqq.QQBot类的实例化对象，通过扫码完成机器人的登录
 
 2. 使用前请在手机QQ的`设置`->`账号安全`->`登录设备管理`中关闭`登录保护`
 
+3. 调用对象的`ExitLogin`方法退出登录，暂不支持登录token的保存
 #### 编写机器人功能
 
-通过创建pcqq.Plugin类的子类，并重写match和handle方法来编写机器人的功能
+通过创建pcqq.Plugin类的子类，并重写match方法和handle方法来编写机器人的功能
 
 |       内置方法        |      功能      | 说明 |
 | ---------------- | ------------- | ---- |
 | send_msg         | 发送消息       | 向接收群/接收用户发送消息内容     |
-| on_full_match    | 完全匹配消息      | 详见on_full_match方法注释     |
+| send_group_msg         | 发送群聊消息       | 向指定群发送消息内容     |
+| send_private_msg         | 发送私聊消息       | 向指定用户发送消息内容     |
 | on_reg_match     | 正则匹配消息      | 详见on_reg_match方法注释     |
-| on_common_match    | 命令匹配消息      | 详见on_common_match方法注释     |
-| is_at_me     | 是否被at      | 判断接收信息中是否艾特了机器人     |
-| is_admin_user    | 是否是主人      | 判断消息发送者是否是机器人主人     |
+| on_cmd_match    | 命令匹配消息      | 详见on_cmd_match方法注释     |
+| on_full_match    | 完全匹配消息      | 详见on_full_match方法注释     |
+
+#### 低配CQ之PQ码
+
+
+| PQ 码        | 功能                        |
+| ------------ | --------------------------- |
+| [PQ:at,qq=`对方QQ`]      | @对方                     |
+| [PQ:face,id=`表情ID`]    | 发送QQ 表情                   |
+| [PQ:xml,file=`xml代码`]     | 发送XML卡片                 |
+| [PQ:music,title=`标题`,author=`歌手`,url=`跳转链接`,audio=`音频链接`,cover=`封面链接`]   | 分享自定义音乐 |
+
+#### 一个简单的小案例
+
+```
+import pcqq
+bot = pcqq.QQBot()
+
+class TestPlugin(pcqq.Plugin):
+    def match(self) -> bool:
+        return self.on_cmd_match("猜拳", "你要出什么手势呢?")
+    
+    def handle(self):
+        point = ["剪刀","石头","布"]
+        winPoint = [("剪刀","石头"),("石头","布"),("布","剪刀")]
+
+        if self.state["matched"] in point:
+            result = (__import__("random").choice(point),self.state["matched"])
+            if result[0] == result[1]:
+                self.send_msg("机器人出{0}，您出{1}，是平局".format(*result))
+            elif result in winPoint:
+                self.send_msg("机器人出{0}，您出{1}，您赢了".format(*result))
+            else:
+                self.send_msg("机器人出{0}，您出{1}，您输了".format(*result))
+
+bot.RunBot()
+```
