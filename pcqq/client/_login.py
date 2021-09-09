@@ -88,7 +88,7 @@ def ApplyScanCode(QQ)->bytes:
     PcQrcodeToken = reader.ReadBytes(reader.ReadShort())
 
     reader.ReadBytes(4)
-    with open("Qrcode.jpg","wb") as f:
+    with open("QrCode.jpg","wb") as f:
         f.write(reader.ReadBytes(reader.ReadShort()))
     
     if platform.system() == "Windows":
