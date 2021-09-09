@@ -1,6 +1,6 @@
-from cryptography.hazmat.bindings._openssl import ffi, lib
-
 def EncryptECDH(pub:bytes, PublicKey:bytes, PrivateKey:bytes):
+    from cryptography.hazmat.bindings._openssl import ffi, lib
+    
     eckey = lib.EC_KEY_new_by_curve_name(711)
 
     big = lib.BN_new()

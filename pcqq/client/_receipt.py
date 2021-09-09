@@ -2,16 +2,16 @@ import pcqq.utils as utils
 import pcqq.binary as binary
 
 
-def GroupReceipt(QQ, msgBody, Type=0):
+def GroupReceipt(QQ, msgBody, Type):
     '''群消息回执'''
     writer = binary.Writer()
 
-    if Type == 0:
+    if Type == 0:   # 群消息回执
         writer.WriteByte(41)
         writer.WriteInt(utils.GroupToGid(msgBody.FromGroup))
         writer.WriteByte(2)
         writer.WriteInt(msgBody.MsgID)
-    else:
+    else:   # 讨论组消息回执
         writer.WriteArray(62, 1, 0, 0, 0, 0)
         writer.WriteInt(msgBody.FromGroup)
         writer.WriteInt(msgBody.MsgID)

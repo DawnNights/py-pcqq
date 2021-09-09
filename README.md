@@ -55,9 +55,17 @@ Python语言PCQQ协议的简单封装，萌新代码写的很烂，大佬多多�
 
 ```
 import pcqq
-bot = pcqq.QQBot()
 
-class TestPlugin(pcqq.Plugin):
+class Hello(pcqq.Plugin):
+    pass
+
+class ReRead(pcqq.Plugin):
+    def match(self) -> bool:
+        return self.on_reg_match("^复读(.+)$")
+    def handle(self):
+        self.send_msg(self.state["regex_matched"][0])
+    
+class Game(pcqq.Plugin):
     def match(self) -> bool:
         return self.on_cmd_match("猜拳", "你要出什么手势呢?")
     
@@ -74,5 +82,6 @@ class TestPlugin(pcqq.Plugin):
             else:
                 self.send_msg("机器人出{0}，您出{1}，您输了".format(*result))
 
+bot = pcqq.QQBot()
 bot.RunBot()
 ```

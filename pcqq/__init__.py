@@ -16,13 +16,14 @@ Created on Tue Sep 7 at 20:02 2021
 1. 使用pip install py-pcqq来安装这个协议库，并在代码中使用import pcqq来导入
 2. 创建一个pcqq.QQBot类的实例，创建完毕后通过扫码登录获取机器人对象
 3. 通过编写pcqq.Plugin类的子类，并重写match和handle方法来实现对机器人功能的编写
-4. 调用RunBot方法使机器人开始运行
+4. 调用RunBot方法使机器人装载编写的插件并开始监听消息
 
 注意事项: 
 1. 该协议库暂时只能使用扫码登录
+2. 暂时没搞登录token的保存
 2. 该协议库能发送的消息包括(at, 文本, 表情, xml卡片)
-3. 该协议库能接收的消息包括(at, 文本, 图片, 表情, xml卡片)
+3. 该协议库能接收的消息包括(at, 文本, 图片, 表情)
 4. 该协议库目前bug贼多，坐等一个大佬带我QAQ
 """
 
-from ._bot import QQBot, Plugin
+from ._core import QQBot, Plugin

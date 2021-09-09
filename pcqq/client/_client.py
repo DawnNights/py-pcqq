@@ -1,15 +1,23 @@
 import time
+import socket
 import threading
-import pcqq.utils.log as log
+import pcqq.log as log
+import pcqq.const as const
 import pcqq.utils as utils
 import pcqq.binary as binary
-import pcqq.client as client
 
-class QQClient(utils.TcpSocket):
+class QQClient:
     def __init__(self):
-        super().__init__()
+        self._sock = socket.socket()
+        self._sock.settimeout(6.0)  # 创建套接字，设置6秒超时
 
-        # 定义QQClient相关属性
+        ip = socket.gethostbyname('tcpconn.tencent.com')
+        try:
+            self._sock.connect((ip, 443))
+            self.SeverIp = b''.join([int(i).to_bytes(1, "big") for i in ip.split(".")])
+        except Exception as error:
+            log.Panicln(error=error)
+        
         self.BinQQ = b'\x00'*4
         self.LongQQ = 0
         self.PassWord = ""
@@ -18,20 +26,18 @@ class QQClient(utils.TcpSocket):
         self.TgtKey = b''
         self.SessionKey = b''
 
-        self.LocalIp = b''
-        self.SeverIp = b''
-        self.ConnectTime = b''
         self.IsScanCode = True
-
-        for host in ["","2","3","4"]:
-            if self.Connect(f"tcpconn{host}.tencent.com", 443):
-                self.SeverIp = utils.Hex2Bin(utils.IpToHex(self._addr[0]))
-                break
-        if self.SeverIp == b'':
-            log.error("连接服务器失败，请尝试重新运行程序")
-        
     
-    def Pack(self, cmd:str, body:bytes, version:bytes=client.BodyVersion, sequence:bytes=utils.GetRandomBin(2))->bytes:
+    def Send(self, body:bytes):
+        self._sock.send((len(body)+2).to_bytes(2, "big") + body)
+    
+    def Recv(self)->bytes:
+        try:
+            return self._sock.recv(1024*8)
+        except Exception as err:
+            return b''
+
+    def Pack(self, cmd:str, body:bytes, version:bytes=const.BodyVersion, sequence:bytes=utils.GetRandomBin(2))->bytes:
         '''
         组装协议包
         :param cmd: 包命令
@@ -40,20 +46,23 @@ class QQClient(utils.TcpSocket):
         :param version: 包版本
         '''
         writer = binary.Writer()
-        writer.WriteBytes(client.Header)
+        writer.WriteBytes(const.Header)
+
         writer.WriteHex(cmd)
         writer.WriteBytes(sequence)
+
         writer.WriteBytes(self.BinQQ)
         writer.WriteBytes(version)
+        
         if self.SessionKey != b'':
             body = binary.TeaEncrypt(body, self.SessionKey)
         writer.WriteBytes(body)
-        writer.WriteBytes(client.Tail)
-        return writer.ReadAll()
 
+        writer.WriteBytes(const.Tail)
+        return writer.ReadAll()
+    
     def HeartBeat(self):
         '''按40秒每次的频率循环发送心跳包'''
-
         self.Send(self.Pack(
             cmd="00 58",
             body=b'\x00\x01\x00\x01',
@@ -66,7 +75,7 @@ class QQClient(utils.TcpSocket):
             cmd="00 62",
             body=b'\x00'*16,
         ))
-
+    
     def SendPrivateMsg(self, userID:int, msgBody:bytes)->bool:
         '''
         发送私聊消息

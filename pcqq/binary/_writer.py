@@ -35,4 +35,4 @@ class Writer:
             num = num >> 7
             n += 1
         buf[n] = num
-        self._src = self._src + b''.join([x.to_bytes(1,"big") for x in buf])
+        self._src = self._src + b''.join([x.to_bytes(1,"big") for x in buf if x != None])

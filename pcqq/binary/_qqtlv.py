@@ -1,6 +1,11 @@
 from ._writer import Writer as _Writer
 from ._qqtea import TeaEncrypt as _TeaEncrypt
-import pcqq.utils as _utils
+from random import randint as _randint
+
+def _GetRandomBin(length: int)->bytes:
+    '''生成指定长度的随机字节集'''
+    dst = [_randint(0,255).to_bytes(1,"big") for _ in range(length)]
+    return b''.join(dst)
 
 def _TlvPack(TlvCmd: str, TlvBin: bytes) -> bytes:
     writer = _Writer()
@@ -72,7 +77,7 @@ def TLV_0114_DHParams()->bytes:
 def TLV_0103_SID() -> bytes:
     writer = _Writer()
     writer.WriteHex("00 01 00 10")
-    writer.WriteBytes(_utils.GetRandomBin(16))
+    writer.WriteBytes(_GetRandomBin(16))
     return _TlvPack("01 03", writer.ReadAll())
 
 def TLV_0312_Misc_Flag() -> bytes:
@@ -93,11 +98,11 @@ def TLV_0313_GUID_Ex() -> bytes:
 def TLV_0102_Official(Token0038From0825: bytes) -> bytes:
     writer = _Writer()
     writer.WriteHex("00 01")
-    writer.WriteBytes(_utils.GetRandomBin(16))
+    writer.WriteBytes(_GetRandomBin(16))
     writer.WriteShort(len(Token0038From0825))
     writer.WriteBytes(Token0038From0825)
     writer.WriteHex("00 14")
-    writer.WriteBytes(_utils.GetRandomBin(20))
+    writer.WriteBytes(_GetRandomBin(20))
     return _TlvPack("01 02", writer.ReadAll())
 
 def TLV_0309_Ping_Strategy(ServerIp:bytes, RedirectionHistory:str, RedirectionTimes:int)->bytes:
@@ -134,21 +139,21 @@ def TLV_000C_PingRedirect(ServerIp: bytes) -> bytes:
 def TLV_001F_DeviceID() -> bytes:
     writer = _Writer()
     writer.WriteHex("00 01")
-    writer.WriteBytes(_utils.GetRandomBin(32))
+    writer.WriteBytes(_GetRandomBin(32))
     return _TlvPack("00 1F", writer.ReadAll())
 
 def TLV_0105_m_vec0x12c() -> bytes:
     writer = _Writer()
     writer.WriteHex("00 01 01 02 00 14 01 01 00 10")
-    writer.WriteBytes(_utils.GetRandomBin(16))
+    writer.WriteBytes(_GetRandomBin(16))
     writer.WriteHex("00 14 01 02 00 10")
-    writer.WriteBytes(_utils.GetRandomBin(16))
+    writer.WriteBytes(_GetRandomBin(16))
     return _TlvPack("01 05", writer.ReadAll())
 
 def TLV_010B_QDLoginFlag() -> bytes:
     writer = _Writer()
     writer.WriteHex("00 02")
-    writer.WriteBytes(_utils.GetRandomBin(17))
+    writer.WriteBytes(_GetRandomBin(17))
     writer.WriteHex("10 00 00 00 00 00 00 00 02 00 63 3E 00 63 02 04 00 03 07 00 04 00 49 F5 00 00 00 00 78 8A 33 DD 00 76 A1 78 EB 8E 5B BB FF 17 D0 10 01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 01 00 00 00 01 00 00 00 01 00 00 00 01 00 FE 26 81 75 EC 2A 34 EF 02 3E 50 39 6D B1 AF CC 9F EA 54 E1 70 CC 6C 9E 4E 63 8B 51 EC 7C 84 5C 68 00 00 00 00")
     return _TlvPack("01 0B", writer.ReadAll())
 
