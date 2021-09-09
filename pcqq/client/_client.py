@@ -68,13 +68,6 @@ class QQClient:
             body=b'\x00\x01\x00\x01',
         ))
         threading.Timer(40.0, self.HeartBeat).start()
-
-    def ExitLogin(self):
-        '''退出机器人的登录'''
-        self.Send(self.Pack(
-            cmd="00 62",
-            body=b'\x00'*16,
-        ))
     
     def SendPrivateMsg(self, userID:int, msgBody:bytes)->bool:
         '''

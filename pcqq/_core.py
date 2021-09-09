@@ -4,7 +4,6 @@ import asyncio
 import pcqq.log as log
 import pcqq.const as const
 import pcqq.message as msg
-import pcqq.utils as utils
 import pcqq.client as client
 import pcqq.binary as binary
 
@@ -50,6 +49,13 @@ class QQBot:
         else:
             log.Fatalln(f"尝试发送群聊消息({groupID})失败")
     
+    def ExitLogin(self):
+        '''退出机器人的登录'''
+        self._QQ.Send(self._QQ.Pack(
+            cmd="00 62",
+            body=b'\x00'*16,
+        ))
+        log.Println(f"账号 {self._QQ.LongQQ} 已成功退出登录")
 
     def RunBot(self):
         '''装载插件，监听消息'''
@@ -78,7 +84,10 @@ class QQBot:
             msgBody = msg.MsgBody()
             if msg.MsgParse(body=body, msgBody=msgBody, QQ=self._QQ):
                 if msgBody.Type == "group":
-                    log.Println(f"收到群聊({msgBody.FromGroup})消息 {msg._GetNickName(msgBody.FromQQ)}: {msgBody.MsgText}")
+                    if msgBody.SubType == "":
+                        log.Println(f"收到群聊({msgBody.FromGroup})消息 {msg._GetNickName(msgBody.FromQQ)}: {msgBody.MsgText}")
+                    elif msgBody.SubType == "increase":
+                        log.Println(f"收到群聊({msgBody.FromGroup})事件: {msgBody.MsgText}")
                 elif msgBody.Type == "friend":
                     log.Println(f"收到私聊({msgBody.FromQQ})消息 {msg._GetNickName(msgBody.FromQQ)}: {msgBody.MsgText}")
                 

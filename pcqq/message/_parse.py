@@ -1,3 +1,4 @@
+import pcqq.utils as utils
 import pcqq.binary as binary
 import pcqq.client as client
 from ._face import FaceMap
@@ -10,7 +11,9 @@ class MsgBody:
         self.MsgText = ""   # 消息转义文本
         self.MsgTime = 0    # 消息接收时间
         
+        self.SendQQ = 0 # 消息执行账号
         self.RecvQQ = 0 # 消息接收账号
+
         self.FromQQ = 0 # 消息来源账号
         self.FromGroup = 0  # 消息来源群号
 
@@ -37,7 +40,7 @@ def MsgParse(body:bytes, msgBody:MsgBody, QQ)->bool:
         reader.ReadBytes(8)
         reader.ReadBytes(16)
 
-        client.GroupReceipt(QQ=QQ, msgBody=msgBody, Type=0) # 群聊回执
+        client.GroupReceipt(QQ=QQ, msgBody=msgBody, Type=0)
         if msgBody.FromQQ == msgBody.RecvQQ:
             return False
     elif body[18:20] == b'\x00\xA6':    # 私聊消息
@@ -56,7 +59,29 @@ def MsgParse(body:bytes, msgBody:MsgBody, QQ)->bool:
         reader.ReadBytes(4)
         reader.ReadBytes(9)
 
-        client.PrivateReceipt(QQ=QQ, msgBody=msgBody)   # 私聊回执
+        client.PrivateReceipt(QQ=QQ, msgBody=msgBody)
+    elif body[18:20] == b'\x00\x21':    # 进群事件
+        msgBody.Type = "group"
+        msgBody.SubType = "increase"
+        
+        msgBody.FromGroup = utils.GidToGroup(reader.ReadInt())
+        msgBody.RecvQQ = reader.ReadInt()  # 自身账号
+        
+        reader.ReadBytes(12)
+        reader.ReadBytes(reader.ReadInt()+5)
+
+        msgBody.FromQQ = reader.ReadInt()
+        sign = reader.ReadByte()
+        msgBody.SendQQ = reader.ReadInt()
+
+        if sign == 0x02:    # 管理员审核
+            msgBody.MsgText = f"管理员({msgBody.SendQQ})同意申请者({msgBody.FromQQ})加入群({msgBody.FromGroup})"
+        elif sign == 0x03:  # 群员邀请无需审核
+            msgBody.MsgText = f"群员({msgBody.SendQQ})成功邀请({msgBody.FromQQ})加入群({msgBody.FromGroup})"
+        else:
+            msgBody.MsgText = f"({msgBody.SendQQ})同意申请者({msgBody.FromQQ})加入群({msgBody.FromGroup})"
+        
+        return True
     else:
         return False
     

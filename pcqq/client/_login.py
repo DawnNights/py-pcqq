@@ -1,4 +1,5 @@
 import os
+from sys import path
 import time
 import platform
 import pcqq.log as log
@@ -235,6 +236,32 @@ def LoginValidate(QQ):
     else:
         log.Panicln(f"账号 {QQ.LongQQ} 登录发生未知错误")
 
+def WriteToken(QQ):
+    '''保存登录token'''
+    global PcToken0038From0836, PcToken0088From0836, PcKeyFor0828Send, PcKeyFor0828Recv
+    with open("token.bin", "wb") as f:
+        f.write(b'DawnNights'.join([
+            PcToken0038From0836, 
+            PcToken0088From0836, 
+            PcKeyFor0828Send, 
+            PcKeyFor0828Recv, 
+            QQ.BinQQ, 
+            QQ.SeverIp, 
+            QQ.NickName.encode()
+        ]))
+
+def ReadToken(QQ):
+    '''读取登录Token'''
+    global PcToken0038From0836, PcToken0088From0836, PcKeyFor0828Send, PcKeyFor0828Recv
+    with open("token.bin", "rb") as f:
+        bin = f.read()
+    PcToken0038From0836, PcToken0088From0836, \
+    PcKeyFor0828Send, PcKeyFor0828Recv, \
+    QQ.BinQQ, QQ.SeverIp, QQ.NickName = bin.split(b'DawnNights')
+
+    QQ.NickName = QQ.NickName.decode()
+    QQ.LongQQ = int.from_bytes(QQ.BinQQ,byteorder='big',signed=False)
+
 def ApplySession(QQ):
     '''申请会话密匙'''
     global PcToken0038From0836, PcToken0088From0836, PcKeyFor0828Send, PcKeyFor0828Recv, RedirectionTimes
@@ -282,9 +309,13 @@ def SetOnline(QQ)->bool:
 def LoginByScanCode(QQ):
     '''通过扫码登录'''
     SeekServer(QQ, False)   # 第一次探寻服务器
-    ApplyScanCode(QQ)  # 申请扫码登录
-    SeekServer(QQ, True)   # 第二次探寻服务器
-    
-    LoginValidate(QQ)  # 验证登录状态
+    if os.path.exists("token.bin"):
+        ReadToken(QQ=QQ)    # 置入本地扫码令牌
+    else:
+        ApplyScanCode(QQ)  # 申请扫码登录
+        SeekServer(QQ, True)   # 第二次探寻服务器
+        LoginValidate(QQ)  # 验证登录状态
+        WriteToken(QQ=QQ)
+
     ApplySession(QQ)    # 申请操作密匙
     SetOnline(QQ)   # 置上线状态

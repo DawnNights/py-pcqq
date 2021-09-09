@@ -120,7 +120,7 @@ def Music(title:str, author:str, url:str, audio:str, cover:str)->bytes:
     :param audio: 音频链接
     :param cover: 封面链接
     '''
-    return Xml(f"<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><msg serviceID=\"2\" templateID=\"1\" action=\"web\" brief=\"[分享] {title}\" sourceMsgId=\"0\" url=\"{url}\" flag=\"0\" adverSign=\"0\" multiMsgFlag=\"0\"><item layout=\"2\"><audio cover=\"{cover}\" src=\"{audio}\" /><title>{title}</title><summary>{author}</summary></item><source name=\"\" icon=\"\" action=\"\" appid=\"-1\" /></msg>")
+    return Xml(f"<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><msg serviceID=\"2\" templateID=\"1\" action=\"web\" brief=\"[分享] {title}\" sourceMsgId=\"0\" url=\"{url}\" flag=\"0\" adverSign=\"0\" multiMsgFlag=\"0\"><item layout=\"2\"><audio cover=\"{cover}\" src=\"{audio}\" /><title>{title}</title><summary>{author}</summary></item><source name=\"\" icon=\"\" action=\"\" appid=\"-1\" /></msg>".replace("&","&amp;"))
 
 def PQCode(source:str)->bytes:
     '''

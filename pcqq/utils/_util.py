@@ -70,3 +70,47 @@ def GroupToGid(groupId:int)->int:
     elif left >= 500:
         return int(group)
     return int(gid)
+
+def GidToGroup(gid:int)->int:
+    '''GID转群号'''
+    gid = str(gid)
+    if int(gid[0:3]) >= 500:
+        return int(gid)
+    left = int(gid[0:-6])
+
+    if left == 202:
+        right = gid[-6:]
+        group = int(right)
+    elif left >= 203 and left <= 212:
+        right = gid[-6:]
+        group = int(str(left-202) + right)
+    elif left >= 480 and left <= 488:
+        right = gid[-6:]
+        group = int(str(left-469) + right)
+    elif left >= 2010 and left <= 2099:
+        right = gid[-6:]
+        group = int(str(left-1943) + right)
+    elif left >= 2100 and left <= 2146:
+        left = int(str(left)[0:3])
+        right = gid[-7:]
+        group = int(str(left-208) + right)
+    elif left >= 2147 and left <= 2199:
+        left = int(str(left)[0:3])
+        right = gid[-7:]
+        group = int(str(left-199) + right)
+    elif left >= 2601 and left <= 2651:
+        left = int(str(left)[0:4])
+        right = gid[-6:]
+        group = int(str(left-2265) + right)
+    elif left >= 3800 and left <= 3989:
+        left = int(str(left)[0:3])
+        right = gid[-7:]
+        group = int(str(left-349) + right)
+    elif left >= 4100 and left <= 4199:
+        left = int(str(left)[0:3])
+        right = gid[-7:]
+        group = int(str(left-389) + right)
+    else:
+        group = 0
+    
+    return group
