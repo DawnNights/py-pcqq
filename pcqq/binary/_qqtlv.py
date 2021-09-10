@@ -1,11 +1,6 @@
 from ._writer import Writer as _Writer
 from ._qqtea import TeaEncrypt as _TeaEncrypt
-from random import randint as _randint
-
-def _GetRandomBin(length: int)->bytes:
-    '''生成指定长度的随机字节集'''
-    dst = [_randint(0,255).to_bytes(1,"big") for _ in range(length)]
-    return b''.join(dst)
+from pcqq.utils import GetRandomBin as _GetRandomBin
 
 def _TlvPack(TlvCmd: str, TlvBin: bytes) -> bytes:
     writer = _Writer()

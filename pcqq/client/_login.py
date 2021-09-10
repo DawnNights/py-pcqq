@@ -1,5 +1,4 @@
 import os
-from sys import path
 import time
 import platform
 import pcqq.log as log
@@ -65,8 +64,9 @@ def ApplyScanCode(QQ)->bytes:
 
     # 发送0818协议包
     writer = binary.Writer()
-    writer.WriteBytes(binary.TLV_0019_Ping())
-    writer.WriteBytes(binary.TLV_0114_DHParams())
+    writer.WriteHex("00 19 00 10 00 01 00 00 04 4C 00 00 00 01 00 00 15 51 00 00 01 14 00 1D 01 02")
+    writer.WriteShort(len(const.PublicKey))
+    writer.WriteBytes(const.PublicKey)
     writer.WriteHex("03 05 00 1E 00 00 00 00 00 00 00 05 00 00 00 04 00 00 00 00 00 00 00 48 00 00 00 02 00 00 00 02 00 00")
     QQ.Send(QQ.Pack(
         cmd="08 18",
@@ -153,7 +153,6 @@ def ApplyScanCode(QQ)->bytes:
 def LoginValidate(QQ):
     '''登录验证'''
     global PcToken0038From0825, PcToken0038From0836, PcToken0088From0836, RedirectionTimes, PcKeyFor0828Send, PcKeyFor0828Recv
-
     # 发送0836协议包进行登录验证
     writer = binary.Writer()
     
@@ -176,11 +175,30 @@ def LoginValidate(QQ):
     writer.WriteBytes(binary.TLV_0508_UnknownTag())
     writer.WriteBytes(binary.TLV_0313_GUID_Ex())
     writer.WriteBytes(binary.TLV_0102_Official(PcToken0038From0825))
+    body = binary.TeaEncrypt(writer.ReadAll(), const.ShareKey)
+
     
+    '''
+    pack.SetHex("02 36 39")
+        pack.SetHex("08 36")
+        pack.SetBin(util.GetRandomBin(2))
+        pack.SetBin(self.QQ.BinQQ)
+        pack.SetHex("03 00 00 00 01 01 01 00 00 67 B7 00 00 00 00 00 01")
+        pack.SetHex("01 02")
+
+        pack.SetShort(len(self.QQ.PublicKey))
+        pack.SetBin(self.QQ.PublicKey)
+        pack.SetHex("00 00 00 10")
+        pack.SetBin(self.QQ.RandHead16)
+        pack.SetBin(data)
+        pack.SetHex("03")
+        data = pack.GetAll()
+    '''
+
     QQ.Send(QQ.Pack(
         cmd="08 36",
-        body=const.PublicKey+utils.Hex2Bin("00 00 00 10")+const.RandHead16+binary.TeaEncrypt(writer.ReadAll(), const.ShareKey),
-        version=const.StructVersion + utils.Hex2Bin("00 02") + const.EdchVersion+utils.Hex2Bin("00 19"),
+        body=len(const.PublicKey).to_bytes(2,"big")+const.PublicKey+utils.Hex2Bin("00 00 00 10")+const.RandHead16+body,
+        version=const.StructVersion + utils.Hex2Bin("00 01 01 02"),
     ))
     
     # 判断是否成功接包
@@ -189,16 +207,7 @@ def LoginValidate(QQ):
         log.Panicln("登录验证失败，可能是您的设备开启了登录保护，请在手机QQ的[设置]->[账号安全]->[登录设备管理]中关闭[登录保护]选项")
 
     # 解析0836响应包获取验证状态
-    reader = binary.Reader(binary.TeaDecrypt(body[16:-1], const.ShareKey))
-
-    if reader.ReadByte() == 0x01 and reader.ReadByte() == 0x03: # 需要二次解析
-        bufShareKey = utils.EncryptECDH(reader.ReadBytes(reader.ReadShort()), const.PublicKey, const.PrivateKey)
-        body = binary.TeaDecrypt(reader.ReadAll(), bufShareKey)
-
-        if QQ.IsScanCode:
-            reader.Update(binary.TeaDecrypt(body, QQ.TgtKey))
-        else:
-            pass
+    reader = binary.Reader(binary.TeaDecrypt(binary.TeaDecrypt(body[16:-1], const.ShareKey), QQ.TgtKey))
     
     sign = reader.ReadByte()
     if sign == 0x00:

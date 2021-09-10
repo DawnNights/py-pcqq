@@ -1,3 +1,5 @@
+
+import pcqq.const as const
 import pcqq.utils as utils
 import pcqq.binary as binary
 
@@ -28,7 +30,6 @@ def PrivateReceipt(QQ, msgBody):
     writer.WriteHex("08 01")
     writer.WriteHex("12 03 98 01 00")
     writer.WriteHex("0A 0E 08")
-
     writer.WriteVarInt(msgBody.FromQQ)
     writer.WriteHex("10")
     writer.WriteVarInt(msgBody.MsgTime)
@@ -40,6 +41,7 @@ def PrivateReceipt(QQ, msgBody):
     writer.WriteBytes(body)
 
     QQ.Send(QQ.Pack(
-        cmd="08 19",
+        cmd="03 19",
         body=writer.ReadAll(),
+        version=const.FuncVersion,
     ))

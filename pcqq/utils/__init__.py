@@ -19,12 +19,12 @@ Created on Thu Sep 9 at 17:56 2021
 4. 调用RunBot方法使机器人装载编写的插件并开始监听消息
 
 注意事项: 
-1. 该协议库暂时只能使用扫码登录
-2. 该协议库能发送的消息包括(at, 文本, 表情, xml卡片)
-3. 该协议库能接收的消息包括(at, 文本, 图片, 表情)
-4. 该协议库目前bug贼多，坐等一个大佬带我QAQ
+1. 该协议库暂时只能使用扫码登录，扫码得到的token自动保存于token.bin文件
+2. 有token.bin文件时优先读取该文件内的token，否则需要进行扫码
+3. 该协议库能发送的消息包括(at, 文本, 表情, xml卡片)
+4. 该协议库能接收的消息包括(at, 文本, 图片, 表情)
+5. 该协议库目前bug贼多，坐等一个大佬带我QAQ
 """
 
 from ._draw import Print_QrCode
-from ._crypto import EncryptECDH
 from ._util import GetRandomBin, HashMD5, Hex2Bin, Bin2HexTo, GroupToGid, GidToGroup

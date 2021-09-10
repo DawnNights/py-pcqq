@@ -35,8 +35,8 @@ def MsgParse(body:bytes, msgBody:MsgBody, QQ)->bool:
         reader.ReadByte()
         msgBody.FromQQ = reader.ReadInt()  # 消息来源账号
         msgBody.MsgID = reader.ReadInt()
+        msgBody.MsgTime = reader.ReadInt()
 
-        reader.ReadInt()
         reader.ReadBytes(8)
         reader.ReadBytes(16)
 
@@ -53,8 +53,8 @@ def MsgParse(body:bytes, msgBody:MsgBody, QQ)->bool:
         reader.ReadBytes(2)
 
         msgBody.MsgID = reader.ReadShort()
+        msgBody.MsgTime = reader.ReadInt()
 
-        reader.ReadInt()
         reader.ReadBytes(6)
         reader.ReadBytes(4)
         reader.ReadBytes(9)
@@ -85,7 +85,8 @@ def MsgParse(body:bytes, msgBody:MsgBody, QQ)->bool:
     else:
         return False
     
-    msgBody.MsgTime = reader.ReadInt()
+    reader.ReadInt()
+    
     msgBody.MsgSequence = reader.ReadInt()
 
     reader.ReadBytes(8)
@@ -112,10 +113,9 @@ def MsgParse(body:bytes, msgBody:MsgBody, QQ)->bool:
         elif Type == 0x03:  # 图片
             msgread.ReadByte()
             md5Value = msgread.ReadBytes(msgread.ReadShort()).decode()
-            md5Value = md5Value[1:md5Value.find("}")].replace("-", "")
-            msgBody.MsgText += f"[PQ:image,url=https://gchat.qpic.cn/gchatpic_new/0/0-0-{md5Value}/0?term=3]"
+            msgBody.MsgText += f"[PQ:image,url=https://gchat.qpic.cn/gchatpic_new/0/0-0-{md5Value[:-4]}/0?term=3]"
         elif Type == 0x06:  # 图片
             msgread.ReadByte()
-            unkown = msgread.ReadBytes(msgread.ReadShort()).decode()
-            msgBody.MsgText += f"[PQ:image,file={unkown}]"
+            md5Value = msgread.ReadBytes(msgread.ReadShort()).decode()
+            msgBody.MsgText += f"[PQ:image,url=https://gchat.qpic.cn/gchatpic_new/0/0-0-{md5Value[:-4]}/0?term=3]"
     return True
