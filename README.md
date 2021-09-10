@@ -128,3 +128,8 @@ bot = pcqq.QQBot()
 bot.RunBot()
 
 ```
+
+#### 在安卓上运行
+
+由于本项目完全基于python3的标准库编写(但在linux终端内打印登录二维码需要手动安装pillow)，所以即使是在手机上也可以使用QPython这样的Python引擎应用来安装本协议库并运行相关代码，示例请看[视频](https://www.bilibili.com/video/BV1D64y1a7L8)
+
