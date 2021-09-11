@@ -10,9 +10,12 @@ import pcqq.binary as binary
 
 
 class QQBot:
-    def __init__(self) -> None:
+    def __init__(self, LongQQ=0, PassWord="") -> None:
         self._QQ = client.QQClient()    # 创建QQ客户端
-        client.LoginByScanCode(self._QQ)    # 使用扫码登录
+        if LongQQ and PassWord:
+            client.LoginByPassWord(self._QQ, LongQQ, PassWord)
+        else:
+            client.LoginByScanCode(self._QQ)    # 使用扫码登录
         self._QQ.HeartBeat()    # 启动心跳包循环
     
     def SendPrivateMsg(self, userID:int, message:str):
@@ -102,11 +105,12 @@ class QQBot:
                         plugin.handle()  
 
 
-        # import time
         loop = asyncio.get_event_loop()
         while True:
-            # time.sleep(0.2)
-            loop.run_until_complete(HandleMsg(self))
+            try:
+                loop.run_until_complete(HandleMsg(self))
+            except Exception as err:
+                log.Fatalln(err)
 
 class Plugin:
     def __init__(self, bot:QQBot, msgBody:msg.MsgBody):

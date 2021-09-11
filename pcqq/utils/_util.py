@@ -8,17 +8,7 @@ def GetRandomBin(length: int)->bytes:
 
 def HashMD5(src: bytes)->bytes:
     '''将字节集编码为md5 16bit字节集'''
-    s = ""
-    dst = b''
-    md = hashlib.md5(src)
-    origin = md.hexdigest()
-    for i in range(len(origin)):
-        s += origin[i]
-        if i % 2 != 0:
-            int_hex = int(s, 16)
-            dst += int_hex.to_bytes(1,"big")
-            s = ""
-    return dst
+    return hashlib.md5(src).digest()
 
 def Bin2HexTo(src: bytes)->str:
     '''字节集转十六进制文本'''
@@ -27,8 +17,7 @@ def Bin2HexTo(src: bytes)->str:
 
 def Hex2Bin(s: str)->bytes:
     '''十六进制文本转字节集'''
-    dst = b''.join([int("0x"+i,16).to_bytes(1,"big") for i in s.split(" ")])
-    return dst
+    return bytes([int("0x"+i,16) for i in s.split(" ")])
 
 def GroupToGid(groupId:int)->int:
     '''群号转GID'''

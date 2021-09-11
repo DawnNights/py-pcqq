@@ -35,6 +35,27 @@ def TLV_0303_UnknownTag(PcToken0060From0819: bytes) -> bytes:
     writer.WriteBytes(PcToken0060From0819)
     return _TlvPack("03 03", writer.ReadAll())
 
+def TLV_0006_TGTGT(BinQQ: bytes,TGTGTKey:bytes , Md5Once:bytes, Md5Twice:bytes, ConnTime:bytes, LocalIP:bytes, ComputerID:bytes, TGTGT:bytes):
+    writer = _Writer()
+    if TGTGT == b'':
+        writer.WriteBytes(_GetRandomBin(4))
+        writer.WriteArray(0, 2)
+        writer.WriteBytes(BinQQ)
+        writer.WriteHex("00 00 04 4C")  # sso版本号
+        writer.WriteHex("00 00 00 01")  # ServiceId
+        writer.WriteHex("00 00 15 51")  # 客户端版本
+        writer.WriteArray(0, 0, 0)
+        writer.WriteBytes(Md5Once)
+        writer.WriteBytes(ConnTime)
+        writer.WriteArray(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+        writer.WriteBytes(LocalIP)
+        writer.WriteArray(0, 0, 0, 0, 0, 0, 0, 0, 0, 16)
+        writer.WriteBytes(ComputerID)
+        writer.WriteBytes(TGTGTKey)
+    else:
+        writer.WriteBytes(TGTGT)
+    return _TlvPack("00 06", _TeaEncrypt(writer.ReadAll(), Md5Twice))
+
 def TLV_0015_ComputerGuid() -> bytes:
     writer = _Writer()
     writer.WriteHex("00 01 01 74 83 F2 C3 00 10 14 FE 77 FC 00 00 00 00 00 00 00 00 00 00 00 00 02 17 65 6E 9D 00 10 78 8A 33 DD 00 76 A1 78 EB 8E 5B BB FF 17 D0 10")

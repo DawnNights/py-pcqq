@@ -23,9 +23,7 @@ class QQClient:
         self.PassWord = ""
         self.NickName = ""
 
-        self.TgtKey = b''
         self.SessionKey = b''
-
         self.IsScanCode = True
     
     def Send(self, body:bytes):

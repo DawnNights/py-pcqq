@@ -6,6 +6,7 @@ Python语言PCQQ协议的简单封装，萌新代码写的很烂，大佬多多�
 
 #### 登录
 - [x] 扫码登录
+- [x] 账密登录
 - [x] 退出登录
 
 #### 发送消息
@@ -23,7 +24,7 @@ Python语言PCQQ协议的简单封装，萌新代码写的很烂，大佬多多�
 # How to use
 
 #### 创建机器人对象
-1. 创建一个pcqq.QQBot类的实例化对象，通过扫码完成机器人的登录
+1. 创建一个pcqq.QQBot类的实例化对象，通过扫码或填写账密完成机器人的登录
 
 2. 使用前请在手机QQ的`设置`->`账号安全`->`登录设备管理`中关闭`登录保护`
 
@@ -56,27 +57,18 @@ Python语言PCQQ协议的简单封装，萌新代码写的很烂，大佬多多�
 ```
 import pcqq
 
-import json
-import random
-import urllib.parse as parse
-import urllib.request as request
-
-class Hello(pcqq.Plugin):
+class Menu(pcqq.Plugin):
     def match(self) -> bool:
-        return self.on_full_match("hello")
+        return self.on_full_match("菜单") 
+    def handle(self):
+        self.send_msg("没有菜单呢")
 
 class ReRead(pcqq.Plugin):
     def match(self) -> bool:
         return self.on_reg_match("^复读(.+)$")
     def handle(self):
         self.send_msg(self.state["regex_matched"][0])
-
-class Welcome(pcqq.Plugin):
-    def match(self) -> bool:
-        return self.msgBody.SubType == "increase"
-    def handle(self):
-        self.send_msg(f"[PQ:at,qq={self.msgBody.FromQQ}]欢迎进群")
-
+    
 class Game(pcqq.Plugin):
     def match(self) -> bool:
         return self.on_cmd_match("猜拳", "你要出什么手势呢?")
@@ -86,7 +78,7 @@ class Game(pcqq.Plugin):
         winPoint = [("剪刀","石头"),("石头","布"),("布","剪刀")]
 
         if self.state["matched"] in point:
-            result = (random.choice(point),self.state["matched"])
+            result = (__import__("random").choice(point),self.state["matched"])
             if result[0] == result[1]:
                 self.send_msg("机器人出{0}，您出{1}，是平局".format(*result))
             elif result in winPoint:
@@ -94,42 +86,7 @@ class Game(pcqq.Plugin):
             else:
                 self.send_msg("机器人出{0}，您出{1}，您输了".format(*result))
 
-class KuwoMusic(pcqq.Plugin):   # 酷我点歌
-    def match(self) -> bool:
-        return self.on_cmd_match("点歌", "请问你要点的歌名是什么")
-    def handle(self):
-        headers = {
-            "Cookie": "Hm_lvt_cdb524f42f0ce19b169a8071123a4797=1610284708,1610699237; _ga=GA1.2.1289529848.1591618534; kw_token=LWKACV45JSQ; Hm_lpvt_cdb524f42f0ce19b169a8071123a4797=1610699468; _gid=GA1.2.1868980507.1610699238; _gat=1",
-            "csrf": "LWKACV45JSQ",
-            "User-Agent": "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:84.0) Gecko/20100101 Firefox/84.0",
-            "Referer": "https://www.kuwo.cn/search/list?key=",
-        }
-
-        req = request.Request(
-            url = f"https://www.kuwo.cn/api/www/search/searchMusicBykeyWord?key={parse.quote(self.state['matched'])}&pn=1&rn=1&httpsStatus=1", 
-            headers = headers, 
-            method = "GET"
-        )
-        with request.urlopen(req) as rsp:
-            info = json.loads(rsp.read())["data"]["list"][0]
-        
-        req = request.Request(
-            url = f"http://www.kuwo.cn/url?format=mp3&rid={info['rid']}&response=url&type=convert_url3&br=128kmp3&from=web&httpsStatus=1", 
-            headers = headers, 
-            method = "GET"
-        )
-        
-        with request.urlopen(req) as rsp:
-            music = json.loads(rsp.read())
-        
-        self.send_msg(f"[PQ:music,title={info['name']},author={info['artist']},url=https://www.kuwo.cn/play_detail/{info['rid']},audio={music['url']},cover={info['pic']}]")
-
 bot = pcqq.QQBot()
+# bot = pcqq.QQBot(账号, 密码)
 bot.RunBot()
-
 ```
-
-#### 在安卓上运行
-
-由于本项目完全基于python3的标准库编写(但在linux终端内打印登录二维码需要手动安装pillow)，所以即使是在手机上也可以使用QPython这样的Python引擎应用来安装本协议库并运行相关代码，示例请看[视频](https://www.bilibili.com/video/BV1D64y1a7L8)
-

@@ -6,18 +6,24 @@ import pcqq.const as const
 import pcqq.utils as utils
 import pcqq.binary as binary
 
+LocalIp = b''
+ConnectTime = b''
 
 RedirectionTimes = 0    # 重定向次数
 RedirectionHistory = ""   # 重定向历史
 PcToken0038From0825 = b''   # 0038令牌
 PcToken0038From0836 = b''   # 0038令牌
 PcToken0088From0836 = b''   # 0088令牌
-PcKeyFor0828Send = b''  # 0828协议包send令牌
-PcKeyFor0828Recv = b''  # 0828协议包recv令牌
+
+PcKeyTGT = utils.GetRandomBin(16)  # TGT密匙
+PcKeyTGTGT = b''  # TGTGT密匙
+
+PcKeyFor0828Send = b''  # 0828协议包send密匙
+PcKeyFor0828Recv = b''  # 0828协议包recv密匙
 
 def SeekServer(QQ, logging:bool=False):
     '''登录服务器探寻'''
-    global RedirectionTimes, RedirectionHistory, PcToken0038From0825
+    global RedirectionTimes, RedirectionHistory, PcToken0038From0825, LocalIp, ConnectTime
 
     # 发送0825协议包探寻服务器
     writer = binary.Writer()
@@ -45,8 +51,8 @@ def SeekServer(QQ, logging:bool=False):
     PcToken0038From0825 = reader.ReadBytes(reader.ReadShort())
 
     reader.ReadBytes(6)
-    reader.ReadBytes(4)    # ConnectTime
-    reader.ReadBytes(4)    # LocalIp
+    ConnectTime = reader.ReadBytes(4)    # ConnectTime
+    LocalIp = reader.ReadBytes(4)    # LocalIp
 
     reader.ReadBytes(2)
     if sign == 0xfe:
@@ -61,6 +67,7 @@ def SeekServer(QQ, logging:bool=False):
 
 def ApplyScanCode(QQ)->bytes:
     '''申请登录二维码并等待扫码'''
+    global PcKeyTGT
 
     # 发送0818协议包
     writer = binary.Writer()
@@ -139,7 +146,7 @@ def ApplyScanCode(QQ)->bytes:
             QQ.PassWord = reader.ReadBytes(reader.ReadShort())
 
             reader.ReadBytes(2)
-            QQ.TgtKey = reader.ReadBytes(reader.ReadShort())
+            PcKeyTGT = reader.ReadBytes(reader.ReadShort())
 
             os.remove("QrCode.jpg")
             log.Println(f"账号 {QQ.LongQQ} 已确认登录，正在登录中......")
@@ -152,7 +159,8 @@ def ApplyScanCode(QQ)->bytes:
 
 def LoginValidate(QQ):
     '''登录验证'''
-    global PcToken0038From0825, PcToken0038From0836, PcToken0088From0836, RedirectionTimes, PcKeyFor0828Send, PcKeyFor0828Recv
+    global PcToken0038From0825, PcToken0038From0836, PcToken0088From0836, RedirectionTimes, PcKeyFor0828Send, PcKeyFor0828Recv, \
+        PcKeyTGT, PcKeyTGTGT
     # 发送0836协议包进行登录验证
     writer = binary.Writer()
     
@@ -163,10 +171,19 @@ def LoginValidate(QQ):
     if QQ.IsScanCode:
         writer.WriteBytes(binary.TLV_0303_UnknownTag(QQ.PassWord))
     else:
-        pass
+        writer.WriteBytes(binary.TLV_0006_TGTGT(
+            BinQQ=QQ.BinQQ, 
+            TGTGTKey=PcKeyTGT, 
+            Md5Once=md5_once, 
+            Md5Twice=md5_twice, 
+            ConnTime=ConnectTime, 
+            LocalIP=LocalIp, 
+            ComputerID=utils.HashMD5(f"{QQ.LongQQ}ComputerID".encode()), 
+            TGTGT=PcKeyTGTGT
+        ))
 
     writer.WriteBytes(binary.TLV_0015_ComputerGuid())
-    writer.WriteBytes(binary.TLV_001A_GTKeyTGTGTCryptedData(QQ.TgtKey))
+    writer.WriteBytes(binary.TLV_001A_GTKeyTGTGTCryptedData(PcKeyTGT))
     writer.WriteBytes(binary.TLV_0018_Ping(QQ.BinQQ, RedirectionTimes))
         
     writer.WriteBytes(binary.TLV_0103_SID())
@@ -176,24 +193,6 @@ def LoginValidate(QQ):
     writer.WriteBytes(binary.TLV_0313_GUID_Ex())
     writer.WriteBytes(binary.TLV_0102_Official(PcToken0038From0825))
     body = binary.TeaEncrypt(writer.ReadAll(), const.ShareKey)
-
-    
-    '''
-    pack.SetHex("02 36 39")
-        pack.SetHex("08 36")
-        pack.SetBin(util.GetRandomBin(2))
-        pack.SetBin(self.QQ.BinQQ)
-        pack.SetHex("03 00 00 00 01 01 01 00 00 67 B7 00 00 00 00 00 01")
-        pack.SetHex("01 02")
-
-        pack.SetShort(len(self.QQ.PublicKey))
-        pack.SetBin(self.QQ.PublicKey)
-        pack.SetHex("00 00 00 10")
-        pack.SetBin(self.QQ.RandHead16)
-        pack.SetBin(data)
-        pack.SetHex("03")
-        data = pack.GetAll()
-    '''
 
     QQ.Send(QQ.Pack(
         cmd="08 36",
@@ -207,43 +206,64 @@ def LoginValidate(QQ):
         log.Panicln("登录验证失败，可能是您的设备开启了登录保护，请在手机QQ的[设置]->[账号安全]->[登录设备管理]中关闭[登录保护]选项")
 
     # 解析0836响应包获取验证状态
-    reader = binary.Reader(binary.TeaDecrypt(binary.TeaDecrypt(body[16:-1], const.ShareKey), QQ.TgtKey))
+    body = binary.TeaDecrypt(body[16:-1], const.ShareKey)
     
-    sign = reader.ReadByte()
-    if sign == 0x00:
-        for _ in range(5):
-            tlvName = utils.Bin2HexTo(reader.ReadBytes(2))
-            tlvLength = reader.ReadShort()
+    try:
+        body = binary.TeaDecrypt(body, PcKeyTGT)
+        reader = binary.Reader(body)
+        sign = reader.ReadByte()
+        if sign == 0x00:
+            for _ in range(5):
+                tlvName = utils.Bin2HexTo(reader.ReadBytes(2))
+                tlvLength = reader.ReadShort()
+                if tlvName == "1 9":
+                    reader.ReadBytes(2)
+                    PcKeyFor0828Send = reader.ReadBytes(16)
 
-            if tlvName == "1 9":
-                reader.ReadBytes(2)
-                PcKeyFor0828Send = reader.ReadBytes(16)
+                    PcToken0038From0836 = reader.ReadBytes(reader.ReadShort())
+                    
+                    reader.ReadBytes(reader.ReadShort())
+                    reader.ReadBytes(2)
+                elif tlvName == "1 8":
+                    reader.ReadBytes(8)
+                    QQ.NickName = reader.ReadBytes(reader.ReadByte()).decode()
+                elif tlvName == "1 7":
+                    reader.ReadBytes(26)
+                    PcKeyFor0828Recv = reader.ReadBytes(16)
 
-                PcToken0038From0836 = reader.ReadBytes(reader.ReadShort())
-                
-                reader.ReadBytes(reader.ReadShort())
-                reader.ReadBytes(2)
-            elif tlvName == "1 8":
-                reader.ReadBytes(8)
-                QQ.NickName = reader.ReadBytes(reader.ReadByte()).decode()
-            elif tlvName == "1 7":
-                reader.ReadBytes(26)
-                PcKeyFor0828Recv = reader.ReadBytes(16)
+                    PcToken0088From0836 = reader.ReadBytes(reader.ReadShort())
+                    reader.ReadBytes(tlvLength-180)
+                else:
+                    reader.ReadBytes(tlvLength)
+        elif sign == 0x01:
+            log.Fatalln(f"登录需要更新TGTGT或需要二次解密")
 
-                PcToken0088From0836 = reader.ReadBytes(reader.ReadShort())
-                reader.ReadBytes(tlvLength-180)
-            else:
-                reader.ReadBytes(tlvLength)
-    elif sign == 0x33:
-        log.Panicln(f"账号 {QQ.LongQQ} 冻结或被回收")
-    elif sign == 0x34:
-        log.Panicln(f"账号 {QQ.LongQQ} 密码校验失败，请重写填写密码")
-    elif sign == 0x3F:
-        log.Panicln(f"账号 {QQ.LongQQ} 需要验证密保或开启了设备锁，请关闭设备锁或使用扫码登录")
-    elif sign == 0x3F:
-        log.Panicln(f"账号 {QQ.LongQQ} 登录需要验证码")
-    else:
-        log.Panicln(f"账号 {QQ.LongQQ} 登录发生未知错误")
+            reader.ReadBytes(2)
+            PcKeyTGT = reader.ReadBytes(reader.ReadShort())
+
+            reader.ReadBytes(2)
+            PcKeyTGTGT = reader.ReadBytes(reader.ReadShort())
+            PcKeyTGTGT = binary.TeaDecrypt(PcKeyTGTGT, md5_twice)
+
+            LoginValidate(QQ=QQ)
+        elif sign == 0x33:
+            log.Panicln(f"账号 {QQ.LongQQ} 冻结或被回收")
+        elif sign == 0x34:
+            log.Panicln(f"账号 {QQ.LongQQ} 密码校验失败，请重写填写密码")
+        elif sign == 0x3F:
+            log.Panicln(f"账号 {QQ.LongQQ} 需要验证密保或开启了设备锁，请关闭设备锁或使用扫码登录")
+        elif sign == 0x3F:
+            log.Panicln(f"账号 {QQ.LongQQ} 登录需要验证码")
+        else:
+            log.Panicln(f"账号 {QQ.LongQQ} 登录发生{hex(sign)}错误")
+    except Exception as err:
+
+        if not QQ.IsScanCode and input("登录出现问题，是否要启动扫码登录(yes/no): ").lower() == "yes":
+            ApplyScanCode(QQ)  # 申请扫码登录
+            SeekServer(QQ, True)   # 第二次探寻服务器
+            LoginValidate(QQ)  # 验证登录状态
+        else:
+            log.Panicln(err)
 
 def WriteToken(QQ):
     '''保存登录token'''
@@ -319,10 +339,32 @@ def LoginByScanCode(QQ):
     '''通过扫码登录'''
     SeekServer(QQ, False)   # 第一次探寻服务器
     if os.path.exists("token.bin"):
-        ReadToken(QQ=QQ)    # 置入本地扫码令牌
+        ReadToken(QQ=QQ)    # 置入本地登录令牌
     else:
         ApplyScanCode(QQ)  # 申请扫码登录
         SeekServer(QQ, True)   # 第二次探寻服务器
+        LoginValidate(QQ)  # 验证登录状态
+        WriteToken(QQ=QQ)
+
+    ApplySession(QQ)    # 申请操作密匙
+    SetOnline(QQ)   # 置上线状态
+
+def LoginByPassWord(QQ, longQQ:int, password:str):
+    '''通过账密登录'''
+    QQ.IsScanCode = False
+    QQ.LongQQ = longQQ
+    QQ.PassWord = password
+    QQ.BinQQ = longQQ.to_bytes(4, "big")
+
+    SeekServer(QQ, False)   # 第一次探寻服务器
+
+    if os.path.exists("token.bin"):
+        ReadToken(QQ=QQ)    # 置入本地登录令牌
+    else:
+        global md5_once, md5_twice
+        md5_once = utils.HashMD5(QQ.PassWord.encode())
+        md5_twice = utils.HashMD5(md5_once + bytes(4) + QQ.BinQQ)
+
         LoginValidate(QQ)  # 验证登录状态
         WriteToken(QQ=QQ)
 
