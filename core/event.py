@@ -1,9 +1,9 @@
 import pcqq.binary as binary
 import pcqq.utils as utils
-import pcqq.utils.log as log
+import pcqq.log as log
 
 from .api import GetNickName
-from .const import ALLFACE, ALLEVENT
+from pcqq.const import ALLFACE, ALLEVENT
 
 
 class Event:

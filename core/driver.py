@@ -3,12 +3,12 @@ import queue
 import threading
 
 import pcqq.utils as utils
-import pcqq.utils.log as log
+import pcqq.log as log
 import pcqq.binary as binary
 import pcqq.client as client
 
 from .api import GetNickName
-from .const import BODY_VERSION, FUNC_VERSION, TAIL
+from pcqq.const import BODY_VERSION, FUNC_VERSION, TAIL
 from .event import Event
 from .message import MessageSegment
 

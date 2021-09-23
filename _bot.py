@@ -2,7 +2,7 @@ import os
 import sys
 import asyncio
 
-import pcqq.utils.log as log
+import pcqq.log as log
 import pcqq.core as core
 import pcqq.client as client
 

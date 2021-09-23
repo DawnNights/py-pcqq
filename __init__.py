@@ -14,6 +14,6 @@ Created on Thu Sep 23 at 20:20 2021
 """
 
 from ._session import Session, Event, QQDriver, MessageSegment, Rule, HandleFunc
-from ._demo import isAtMe, isAdmin, onlyGroup, onlyPrivate, checkUser, checkType
-from ._plugin import on_event, on_regex, on_full, on_command
+from ._plugin import on_event, on_regex, on_full, on_command, \
+    isAtMe, isAdmin, onlyGroup, onlyPrivate, checkUser, checkType
 from ._bot import init, run, load_plugins

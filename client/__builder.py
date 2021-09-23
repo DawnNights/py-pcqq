@@ -1,6 +1,6 @@
 import os
-import pcqq.utils.log as log
-import pcqq.core.const as const
+import pcqq.log as log
+import pcqq.const as const
 
 import pcqq.utils as utils
 import pcqq.binary as binary

@@ -1,11 +1,15 @@
 import socket
 
 class TCPSocket(socket.socket):
-    def __init__(self, host: str, port: int):
-        super().__init__()
+    def Connect(self, host: str, port: int) -> bool:
         self.settimeout(6.0)
         self.addr = (socket.gethostbyname(host), port)
-        self.connect(self.addr)
+
+        try:
+            self.connect(self.addr)
+            return True
+        except:
+            return False
 
     def Send(self, body: bytes):
         head = (len(body) + 2).to_bytes(2, 'big')
