@@ -1,26 +1,4 @@
-import random
-import hashlib
-
-def GetRandomBin(length: int)->bytes:
-    '''生成指定长度的随机字节集'''
-    dst = [random.randint(0,255).to_bytes(1,"big") for _ in range(length)]
-    return b''.join(dst)
-
-def HashMD5(src: bytes)->bytes:
-    '''将字节集编码为md5 16bit字节集'''
-    return hashlib.md5(src).digest()
-
-def Bin2HexTo(src: bytes)->str:
-    '''字节集转十六进制文本'''
-    s = " ".join([hex(b)[2:].upper() for b in src])
-    return s
-
-def Hex2Bin(s: str)->bytes:
-    '''十六进制文本转字节集'''
-    return bytes([int("0x"+i,16) for i in s.split(" ")])
-
-def GroupToGid(groupId:int)->int:
-    '''群号转GID'''
+def GroupToGid(groupId: int) -> int:
     group = str(groupId)
     left = int(group[0:-6])
     if left >= 0 and left <= 10:
@@ -60,8 +38,8 @@ def GroupToGid(groupId:int)->int:
         return int(group)
     return int(gid)
 
-def GidToGroup(gid:int)->int:
-    '''GID转群号'''
+
+def GidToGroup(gid: int) -> int:
     gid = str(gid)
     if int(gid[0:3]) >= 500:
         return int(gid)
@@ -72,34 +50,34 @@ def GidToGroup(gid:int)->int:
         group = int(right)
     elif left >= 203 and left <= 212:
         right = gid[-6:]
-        group = int(str(left-202) + right)
+        group = int(str(left - 202) + right)
     elif left >= 480 and left <= 488:
         right = gid[-6:]
-        group = int(str(left-469) + right)
+        group = int(str(left - 469) + right)
     elif left >= 2010 and left <= 2099:
         right = gid[-6:]
-        group = int(str(left-1943) + right)
+        group = int(str(left - 1943) + right)
     elif left >= 2100 and left <= 2146:
         left = int(str(left)[0:3])
         right = gid[-7:]
-        group = int(str(left-208) + right)
+        group = int(str(left - 208) + right)
     elif left >= 2147 and left <= 2199:
         left = int(str(left)[0:3])
         right = gid[-7:]
-        group = int(str(left-199) + right)
+        group = int(str(left - 199) + right)
     elif left >= 2601 and left <= 2651:
         left = int(str(left)[0:4])
         right = gid[-6:]
-        group = int(str(left-2265) + right)
+        group = int(str(left - 2265) + right)
     elif left >= 3800 and left <= 3989:
         left = int(str(left)[0:3])
         right = gid[-7:]
-        group = int(str(left-349) + right)
+        group = int(str(left - 349) + right)
     elif left >= 4100 and left <= 4199:
         left = int(str(left)[0:3])
         right = gid[-7:]
-        group = int(str(left-389) + right)
+        group = int(str(left - 389) + right)
     else:
         group = 0
-    
+
     return group

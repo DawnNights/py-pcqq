@@ -15,31 +15,33 @@ def get_char(r, g, b, alpha=256):
     x = int(gary / (alpha + 1.0) * len(ascii_char))
     return ascii_char[x]
 
+
 def derw_QR(QR_Tab):
     tmp_text = ""
     print_tex = ""
-    
+
     atrr = 7
     fore = 37
     back = 47
-    color_block = "\x1B[%d;%d;%dm" % (atrr,fore,back)
+    color_block = "\x1B[%d;%d;%dm" % (atrr, fore, back)
     atrr = 0
     fore = 0
     back = 0
-    color_none = "\x1B[%d;%d;%dm" % (atrr,fore,back)
-    
-    for loop in range(0,len(QR_Tab)):
-        if QR_Tab[loop] == '■' :
-            tmp_text = "%s  \x1B[0m" %(color_block)
-        elif QR_Tab[loop] == '□' :
-            tmp_text = "%s  \x1B[0m" %(color_none)
+    color_none = "\x1B[%d;%d;%dm" % (atrr, fore, back)
+
+    for loop in range(0, len(QR_Tab)):
+        if QR_Tab[loop] == '■':
+            tmp_text = "%s  \x1B[0m" % (color_block)
+        elif QR_Tab[loop] == '□':
+            tmp_text = "%s  \x1B[0m" % (color_none)
         else:
             tmp_text = "\n"
-            
+
         print_tex = print_tex + tmp_text
     print(print_tex)
 
-def Print_QrCode(path="Qrcode.jpg", length:int=37)->str:
+
+def DrawQrCode(path="Qrcode.jpg", length: int = 37):
     import PIL.Image as Image
 
     im = Image.open(path)

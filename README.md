@@ -1,5 +1,3 @@
-# py-pcqq
-
 Python语言PCQQ协议的简单封装，萌新代码写的很烂，大佬多多包涵
 
 # 已实现功能
@@ -13,7 +11,7 @@ Python语言PCQQ协议的简单封装，萌新代码写的很烂，大佬多多�
 - [x] At
 - [x] 文本
 - [x] 表情
-- [x] Xml卡片
+- [x] 卡片
 
 #### 接收消息
 - [x] At
@@ -21,72 +19,97 @@ Python语言PCQQ协议的简单封装，萌新代码写的很烂，大佬多多�
 - [x] 图片
 - [x] 表情
 
-# How to use
+# 安装
+> `注意`
+> 请确保你的 Python 版本 >= 3.5
 
-#### 创建机器人对象
-1. 创建一个pcqq.QQBot类的实例化对象，通过扫码或填写账密完成机器人的登录
+可以使用 pip/pip3 安装已发布的最新版本
+```
+pip install py-pcqq
+```
 
-2. 使用前请在手机QQ的`设置`->`账号安全`->`登录设备管理`中关闭`登录保护`
+也可以直接通过 git 下载发布于github上的源码
+```
+git clone https://github.com/DawnNights/py-pcqq
+```
 
-3. 调用对象的`ExitLogin`方法退出登录
-#### 编写机器人功能
+# 开始使用
 
-通过创建pcqq.Plugin类的子类，并重写match方法和handle方法来编写机器人的功能
+在确保你已经安装该协议库的情况下，你可以使用以下方法来创造一个机器人
 
-|       内置方法        |      功能      | 说明 |
-| ---------------- | ------------- | ---- |
-| send_msg         | 发送消息       | 向接收群/接收用户发送消息内容     |
-| send_group_msg         | 发送群聊消息       | 向指定群发送消息内容     |
-| send_private_msg         | 发送私聊消息       | 向指定用户发送消息内容     |
-| on_reg_match     | 正则匹配消息      | 详见on_reg_match方法注释     |
-| on_cmd_match    | 命令匹配消息      | 详见on_cmd_match方法注释     |
-| on_full_match    | 完全匹配消息      | 详见on_full_match方法注释     |
+### 最小实例
 
-#### 低配CQ之PQ码
+```python
+import pcqq
 
+pcqq.init(uin, password)
+pcqq.run()
+```
 
-| PQ 码        | 功能                        |
-| ------------ | --------------------------- |
-| [PQ:at,qq=`对方QQ`]      | @对方                     |
-| [PQ:face,id=`表情ID`]    | 发送QQ 表情                   |
-| [PQ:xml,file=`xml代码`]     | 发送XML卡片                 |
-| [PQ:music,title=`标题`,author=`歌手`,url=`跳转链接`,audio=`音频链接`,cover=`封面链接`]   | 分享自定义音乐 |
+1. uin是机器人的账号, 为 int 类型; password是登录机器人的密码, 为 str 类型
 
-#### 一个简单的小案例
+2. 在 uin 或 password 为空值时自动启用扫码登录，Linux系统下需要手动安装pillow库以便于程序在终端打印二维码
+
+3. 当一次登录完成后，程序会在运行路径下生成一个 session.token 的文件，下次运行程序时自动调用文件中的token完成登录
+
+### 编写功能
 
 ```
 import pcqq
 
-class Menu(pcqq.Plugin):
-    def match(self) -> bool:
-        return self.on_full_match("菜单") 
-    def handle(self):
-        self.send_msg("没有菜单呢")
+@pcqq.on_event(pcqq.checkType('group_increase'))
+def welcome(session: pcqq.Session):
+    msg = pcqq.MessageSegment()
+    msg.AddAt(session.event.UserID)
+    msg.AddText('欢迎新人')
+    session.send(msg)
 
-class ReRead(pcqq.Plugin):
-    def match(self) -> bool:
-        return self.on_reg_match("^复读(.+)$")
-    def handle(self):
-        self.send_msg(self.state["regex_matched"][0])
-    
-class Game(pcqq.Plugin):
-    def match(self) -> bool:
-        return self.on_cmd_match("猜拳", "你要出什么手势呢?")
-    
-    def handle(self):
-        point = ["剪刀","石头","布"]
-        winPoint = [("剪刀","石头"),("石头","布"),("布","剪刀")]
+@pcqq.on_regex('^(.{0,2})点歌(.{1,25})$')
+def music(session: pcqq.Session):
+    typ, keyword = session.get()[0]
+    typ = {'': 'qqmusic', '酷我': 'kuwo', '酷狗': 'kugou', '网易': 'cloud163'}.get(typ, '')
+    if typ and keyword:
+        session.send(f'[PQ:music,type={typ},keyword={keyword}]')
 
-        if self.state["matched"] in point:
-            result = (__import__("random").choice(point),self.state["matched"])
-            if result[0] == result[1]:
-                self.send_msg("机器人出{0}，您出{1}，是平局".format(*result))
-            elif result in winPoint:
-                self.send_msg("机器人出{0}，您出{1}，您赢了".format(*result))
-            else:
-                self.send_msg("机器人出{0}，您出{1}，您输了".format(*result))
+@pcqq.on_full('hello')
+def hello(session: pcqq.Session):
+    session.send('hello world')
 
-bot = pcqq.QQBot()
-# bot = pcqq.QQBot(账号, 密码)
-bot.RunBot()
+@pcqq.on_command('复读',aliases=['跟我读'])
+def reread(session: pcqq.Session):
+    words = session.get('请告诉我要复读的内容')
+    session.send(words)
+
+pcqq.init(uin, password)
+pcqq.run()
 ```
+
+### 注册插件
+
+如代码中所展示的，你可以使用协议库中的`on_event`、`on_regex`、`on_full`、`on_command`的装饰器来注册机器人功能
+
+被装饰的是一个pcqq.HandleFunc类型的函数，即代码中唯一传参为pcqq.Session类型，无返回值的函数
+
+|       内置装饰器        |      功能      | 说明 |
+| ---------------- | ------------- | ---- |
+| on_event         | 规则匹配       | 当接收消息满足所有的rules时满足匹配     |
+| on_regex         | 正则匹配       | 当接收消息满足正则表达式解析并满足rules时满足匹配     |
+| on_full         | 完全匹配       | 当接收消息为指定字符串时满足匹配     |
+| on_command     | 命令匹配      | 当关键字出现在接收消息首部时满足匹配     |
+
+
+你也可以按自己的想法自定义装饰器，参照如下: 
+
+``` python
+def on_keyword(keyword: str, *rules: pcqq.Rule):
+    def keyRule(session: pcqq.Session) -> pcqq.Rule:
+        return keyword in session.event.MessageText
+
+    return pcqq.on_event(*rules, keyRule)
+```
+
+### 导入外部插件
+
+`pcqq.load_plugins`是一个用于导入外部模块中注册的插件的功能，其参数`moudles_path`是模块或包的路径( 到文件夹 )
+
+当然，其本质上还是通过import的方式将这些注册的函数导入，你也可以通过`from xx import xxx`或`import xx`的方式来导入
