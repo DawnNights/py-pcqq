@@ -23,9 +23,7 @@ Python语言PCQQ协议的简单封装，萌新代码写的很烂，大佬多多�
 
 # 使用案例
 
-你可以使用 `pip install py-pcqq` 来安装本协议库，机器人写法如下
-
-### 编写功能
+你可以使用 `pip install py-pcqq` 来安装本协议库，开发案例如下:
 
 ```
 import pcqq
