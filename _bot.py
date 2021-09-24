@@ -10,7 +10,7 @@ from ._plugin import Plugin
 from ._session import Session
 
 driver = None
-plugins = []
+plugins = None
 
 
 def init(uin: int = 0, password: str = '', *admins: int):
@@ -20,7 +20,10 @@ def init(uin: int = 0, password: str = '', *admins: int):
     :param admins: 机器人的超级用户
     PS: 若uin或password留空则使用扫码登录
     '''
-    global driver
+    global driver, plugins
+    plugins = Plugin.__subclasses__()[:]
+    log.Println('检测到%d个插件，装载完成，开始尝试登录\n' % (len(plugins)))
+
     qq_client = client.QQClient()
 
     if os.path.exists('session.token'):
@@ -35,12 +38,9 @@ def init(uin: int = 0, password: str = '', *admins: int):
 
 def run():
     '''
-    加载插件，运行机器人
+    开始监听事件
     '''
     global driver, plugins
-    plugins = Plugin.__subclasses__()
-    print('                        ')
-    # log.Println('插件加载完毕，共加载%d个插件，开始接收消息\n' % (len(plugins)))
 
     async def handle(session: Session, plugin):
         try:
