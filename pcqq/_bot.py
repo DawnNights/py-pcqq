@@ -1,6 +1,7 @@
 import os
 import sys
 import asyncio
+import threading
 
 import pcqq.log as log
 import pcqq.core as core
@@ -17,23 +18,28 @@ def init(uin: int = 0, password: str = '', *admins: int):
     '''
     :param uin: 机器人的账号
     :param password: 机器人的密码
-    :param admins: 机器人的超级用户
-    PS: 若uin或password留空则使用扫码登录
+    :param admins: 机器人的超级用户集
+
+    1. 若uin或password留空则使用扫码登录
+    2. admins的内容用户isAdmin规则判断
+    3. 插件功能必须在此函数被调用前注册或导入
     '''
     global driver, plugins
+
     plugins = Plugin.__subclasses__()[:]
+    plugins.sort(key=lambda self: self.priority)    # 根据优先级排序
     log.Println('检测到%d个插件，装载完成，开始尝试登录\n' % (len(plugins)))
 
-    qq_client = client.QQClient()
+    driver = core.QQDriver(client.QQClient(), *admins)
 
     if os.path.exists('session.token'):
-        client.LoginByToken(QQ=qq_client)
+        client.LoginByToken(QQ=driver._Caller_)
     elif uin and password:
-        client.LoginByPassword(QQ=qq_client, Uin=uin, Password=password)
+        client.LoginByPassword(QQ=driver._Caller_, Uin=uin, Password=password)
     else:
-        client.LoginByScancode(QQ=qq_client)
+        client.LoginByScancode(QQ=driver._Caller_)
 
-    driver = core.QQDriver(qq_client, *admins)
+    threading.Thread(target=driver.__HeartBeat__).start()   # 开启心跳线程
 
 
 def run():
@@ -41,19 +47,21 @@ def run():
     开始监听事件
     '''
     global driver, plugins
+    threading.Thread(target=driver.__ListenEvent__).start()  # 开启事件监听线程
 
-    async def handle(session: Session, plugin):
-        try:
-            plugin(session).run()
-        except Exception as err:
-            log.Panicln(err)
-
+    def handle(session: Session):
+        for plugin in plugins:
+            try:
+                if plugin(session).run() and plugin.block:
+                    break
+            except Exception as err:
+                log.Panicln(err)
+    
+    
     loop = asyncio.get_event_loop()
     while True:
         session = Session(driver, driver.Channle.get())
-
-        for plugin in plugins:
-            loop.run_until_complete(handle(session, plugin))
+        loop.run_in_executor(None, handle, session)    # 将事件分配给处理函数
 
 
 def load_plugins(moudles_path: str = ""):

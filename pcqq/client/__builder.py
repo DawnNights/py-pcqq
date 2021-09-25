@@ -308,13 +308,14 @@ def Handle_0828_Packet(QQ: QQClient):
     reader.ReadBytes(63)
     QQ.SessionKey = reader.ReadBytes(16)
 
+
 def ReadToken(QQ: QQClient):
     '''读取登录Token'''
     global PcToken0038From0836, PcToken0088From0836, PcKeyFor0828Send, PcKeyFor0828Recv
     with open('session.token', 'rb') as f:
         PcToken0038From0836, PcToken0088From0836, \
-        PcKeyFor0828Send, PcKeyFor0828Recv, \
-        QQ.BinQQ, QQ.ServerIP, QQ.NickName = f.read().split(b'DawnNights')
+            PcKeyFor0828Send, PcKeyFor0828Recv, \
+            QQ.BinQQ, QQ.ServerIP, QQ.NickName = f.read().split(b'DawnNights')
     log.Println('Succeeded to read Token File: "session.token"')
 
 

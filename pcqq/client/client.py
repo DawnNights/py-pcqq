@@ -1,4 +1,5 @@
 import pcqq.log as log
+import pcqq.const as const
 import pcqq.utils as utils
 import pcqq.binary as binary
 
@@ -7,12 +8,12 @@ class QQClient:
     def __init__(self):
         self.__socket__ = utils.TCPSocket()
 
-        for host in ['tcpconn.tencent.com','tcpconn2.tencent.com','tcpconn3.tencent.com','tcpconn4.tencent.com']:
+        for host in ['tcpconn.tencent.com', 'tcpconn2.tencent.com', 'tcpconn3.tencent.com', 'tcpconn4.tencent.com']:
             if not self.__socket__.Connect(host, 443):
                 log.Panicln(f'尝试连接到 {self.__socket__.addr[0]} 失败')
                 continue
             break
-        
+
         self.ServerIP = bytes(
             [int(v) for v in self.__socket__.addr[0].split('.')])
 

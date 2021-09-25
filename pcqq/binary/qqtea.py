@@ -1,12 +1,14 @@
 import struct
 
-def xor(a, b)->bytes:
+
+def xor(a, b) -> bytes:
     op = 0xffffffff
     a1, a2 = struct.unpack(b'>LL', a[0:8])
     b1, b2 = struct.unpack(b'>LL', b[0:8])
     return struct.pack(b'>LL', (a1 ^ b1) & op, (a2 ^ b2) & op)
 
-def code(v, k)->bytes:
+
+def code(v, k) -> bytes:
     n = 16
     op = 0xffffffff
     delta = 0x9e3779b9
@@ -21,6 +23,7 @@ def code(v, k)->bytes:
         z &= op
         r = struct.pack(b'>LL', y, z)
     return r
+
 
 def decipher(v, k):
     n = 16
@@ -38,7 +41,8 @@ def decipher(v, k):
         s &= op
     return struct.pack(b'>LL', y, z)
 
-def TeaEncrypt(body:bytes, key:bytes)->bytes:
+
+def TeaEncrypt(body: bytes, key: bytes) -> bytes:
     END_CHAR = b'\0'
     FILL_N_OR = 0xF8
     vl = len(body)
@@ -47,9 +51,9 @@ def TeaEncrypt(body:bytes, key:bytes)->bytes:
     for i in range(filln):
         fills = fills + bytes([220])
     body = (bytes([(filln - 2) | FILL_N_OR])
-         + fills
-         + body
-         + END_CHAR * 7)
+            + fills
+            + body
+            + END_CHAR * 7)
     tr = b'\0' * 8
     to = b'\0' * 8
     r = b''
@@ -61,7 +65,8 @@ def TeaEncrypt(body:bytes, key:bytes)->bytes:
         r += tr
     return r
 
-def TeaDecrypt(body:bytes, key:bytes)->bytes:
+
+def TeaDecrypt(body: bytes, key: bytes) -> bytes:
     l = len(body)
     prePlain = decipher(body, key)
     pos = (prePlain[0] & 0x07) + 2

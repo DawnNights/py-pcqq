@@ -1,6 +1,5 @@
 import time
 import queue
-import threading
 
 import pcqq.utils as utils
 import pcqq.log as log
@@ -21,14 +20,12 @@ class QQDriver:
         self._WaitDict_ = {}
         self.Channle = queue.Queue()
 
-        threading.Thread(target=self.__HeartBeat__).start()
-        threading.Thread(target=self.__ListenEvent__).start()
-
     def __HeartBeat__(self):
         '''与服务端保持心跳连接(40s)'''
-        self._Caller_.Send(
-            self._Caller_.Pack('00 58', BODY_VERSION, b'\x00\x01\x00\x01'))
-        threading.Timer(40.0, self.__HeartBeat__).start()
+        while True:
+            self._Caller_.Send(
+                self._Caller_.Pack('00 58', BODY_VERSION, b'\x00\x01\x00\x01'))
+            time.sleep(40.0)
 
     def __ListenEvent__(self):
         '''循环监听事件'''

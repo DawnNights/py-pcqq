@@ -5,8 +5,6 @@ import hashlib
 import urllib.parse as parse
 import urllib.request as request
 
-__nickNameCache__ = {}
-
 
 def kuwo(keyword: str) -> dict:
     '''酷我音乐'''
@@ -16,16 +14,14 @@ def kuwo(keyword: str) -> dict:
         "Referer": "https://www.kuwo.cn/search/list"
     }
     req = request.Request(
-        url=
-        f"https://www.kuwo.cn/api/www/search/searchMusicBykeyWord?key={parse.quote(keyword)}&pn=1&rn=1&httpsStatus=1",
+        url=f"https://www.kuwo.cn/api/www/search/searchMusicBykeyWord?key={parse.quote(keyword)}&pn=1&rn=1&httpsStatus=1",
         headers=headers,
         method="GET")
     with request.urlopen(req) as rsp:
         info = json.loads(rsp.read())["data"]["list"][0]
 
     req = request.Request(
-        url=
-        f"http://www.kuwo.cn/url?format=mp3&rid={info['rid']}&response=url&type=convert_url3&br=128kmp3&from=web&httpsStatus=1",
+        url=f"http://www.kuwo.cn/url?format=mp3&rid={info['rid']}&response=url&type=convert_url3&br=128kmp3&from=web&httpsStatus=1",
         headers=headers,
         method="GET")
 
@@ -70,8 +66,7 @@ def kugou(keyword: str) -> dict:
 
     req = request.Request(
         method="GET",
-        url=
-        "https://wwwapi.kugou.com/yy/index.php?r=play/getdata&hash=%s&album_id=%s"
+        url="https://wwwapi.kugou.com/yy/index.php?r=play/getdata&hash=%s&album_id=%s"
         % (info["FileHash"], info["AlbumID"]),
         headers={"Cookie": "kg_mid=d8e70a262c93d47599c6196c612d6f4f"})
 
@@ -195,6 +190,9 @@ def cloud163(keyword: str) -> dict:
         f"http://music.163.com/song/media/outer/url?id={info['id']}.mp3",
         "cover": info["album"]["blurPicUrl"],
     }
+
+
+__nickNameCache__ = {}
 
 
 def GetNickName(userID: int):

@@ -159,7 +159,7 @@ def TLV_0309_Ping_Strategy(ServerIp: bytes, RedirectionHistory: str,
     else:
         writer.WriteHex("00")
         writer.WriteHex("02")
-        
+
     return _TlvPack("03 09", writer.ReadAll())
 
 
