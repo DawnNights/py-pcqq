@@ -1,36 +1,36 @@
-from .protobuf import varInt
+import io
+import pcqq.utils as utils
+
 
 class Writer:
-    def __init__(self):
-        self.__body = bytes()
+    def __init__(self) -> None:
+        self.raw = io.BytesIO()
 
-    def ReadLen(self) -> int:
-        return len(self.__body)
+    def clear(self) -> bytes:
+        data = self.raw.getvalue()
+        self.raw.close()
+        return data
 
-    def ReadAll(self) -> bytes:
-        body = self.__body
-        self.__body = bytes()
-        return body
+    def write(self, bin: bytes) -> None:
+        self.raw.write(bin)
 
-    def WriteByte(self, b: int):
-        self.__body += b.to_bytes(1, 'big')
+    def write_int(self, num: int) -> None:
+        self.write(utils.int_to_bytes(num))
 
-    def WriteBytes(self, bin: bytes):
-        self.__body += bin
+    def write_int16(self, num: int) -> None:
+        self.write(num.to_bytes(2, 'big'))
 
-    def WriteHex(self, hex: str):
-        hexa = hex.replace(' ', '')
-        size = len(hexa) // 2
-        self.__body += int(hexa, 16).to_bytes(size, 'big')
+    def write_int32(self, num: int) -> None:
+        self.write(num.to_bytes(4, 'big'))
 
-    def WriteInt(self, num: int):
-        self.__body += num.to_bytes(4, 'big')
+    def write_hex(self, hex: str) -> None:
+        self.write(bytes.fromhex(hex))
 
-    def WriteShort(self, num: int):
-        self.__body += num.to_bytes(2, 'big')
+    def write_byte(self, byte: int) -> None:
+        self.write(byte.to_bytes(1, 'big'))
 
-    def WriteArray(self, *args: int):
-        self.__body += bytes(args)
-    
-    def WriteVarInt(self, num:int):
-        self.__body += varInt(num)
+    def write_varint(self, num: int) -> None:
+        while num > 127:
+            self.write_byte(0x80 | num & 0x7F)
+            num = num >> 7
+        self.write_byte(num)

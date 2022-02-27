@@ -1,14 +1,22 @@
-Python语言PCQQ协议的简单封装，仅用标准库实现，萌新已退坑编程不再做完善
+PCQQ协议的Python语言实现
 
-你可以在我博客的[这篇帖子](http://blog.yeli.work/2021/09/11/py-pcqq/)查看更详细的介绍与使用方法
+本项目由纯 Python3 标准库实现，简单易懂无第三方依赖库
 
-代码写的很烂，Bug应该也不少，如果有需求最好移步[OneBot](https://github.com/botuniverse/onebot)
+支持手机扫码登录与账号密码登录，在终端环境下需要安装 pillow 库打印二维码
+
+通过 Generator 和 asyncio 异步协程实现事件的处理与调度
+
+`session.token` 是登录完成后用于下次直接重连的令牌文件
+
+`cache.db` 是存储群信息以及成员信息的数据库文件(可能更新的不及时)
 
 # 已实现功能
 
 #### 登录
 - [x] 扫码登录
 - [x] 账密登录
+- [x] 登录重连
+- [x] 退出登录
 
 #### 发送消息
 - [x] At
@@ -22,36 +30,12 @@ Python语言PCQQ协议的简单封装，仅用标准库实现，萌新已退坑�
 - [x] 图片
 - [x] 表情
 
-# 使用案例
+#### 接收事件
+- [x] 进群事件
+- [x] 退群事件
+- [x] 禁言事件
 
-你可以使用 `pip install py-pcqq` 来安装本协议库，开发案例如下:
-
-```
-import pcqq
-
-@pcqq.on_event(pcqq.checkType('group_increase'))
-def welcome(session: pcqq.Session):
-    msg = pcqq.MessageSegment()
-    msg.AddAt(session.event.UserID)
-    msg.AddText('欢迎新人')
-    session.send(msg)
-
-@pcqq.on_regex('^(.{0,2})点歌(.{1,25})$')
-def music(session: pcqq.Session):
-    typ, keyword = session.get()[0]
-    typ = {'': 'qqmusic', '酷我': 'kuwo', '酷狗': 'kugou', '网易': 'cloud163'}.get(typ, '')
-    if typ and keyword:
-        session.send(f'[PQ:music,type={typ},keyword={keyword}]')
-
-@pcqq.on_full('hello')
-def hello(session: pcqq.Session):
-    session.send('hello world')
-
-@pcqq.on_command('复读',aliases=['跟我读'])
-def reread(session: pcqq.Session):
-    words = session.get('请告诉我要复读的内容')
-    session.send(words)
-
-pcqq.init()
-pcqq.run()
-```
+#### 开放API
+- [x] 更改群名片
+- [x] 群禁言
+- [x] 取群信息

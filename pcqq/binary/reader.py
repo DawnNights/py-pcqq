@@ -1,31 +1,26 @@
+import io
+import re
+
+
 class Reader:
-    def __init__(self, bin: bytes):
-        self.__body = bin
+    def __init__(self, initial_bytes: bytes = b'') -> None:
+        self.raw = io.BytesIO(initial_bytes)
 
-    def ReadLen(self) -> int:
-        return len(self.__body)
+    def tell(self) -> int:
+        return len(self.raw.getvalue()) - self.raw.tell()
 
-    def ReadAll(self) -> bytes:
-        body = self.__body
-        self.__body = bytes()
-        return body
+    def read(self, size: int = -1) -> bytes:
+        return self.raw.read(size)
 
-    def ReadByte(self) -> int:
-        b = self.__body[0]
-        self.__body = self.__body[1:]
-        return b
+    def read_hex(self, size: int = -1) -> str:
+        hex = self.read(size).hex()
+        return " ".join(re.findall('.{2}', hex.upper()))
 
-    def ReadBytes(self, len: int) -> bytes:
-        body = self.__body[0:len]
-        self.__body = self.__body[len:]
-        return body
+    def read_int16(self) -> int:
+        return int.from_bytes(self.read(2), 'big')
 
-    def ReadInt(self) -> int:
-        body = self.__body[0:4]
-        self.__body = self.__body[4:]
-        return int.from_bytes(body, 'big')
+    def read_int32(self) -> int:
+        return int.from_bytes(self.read(4), 'big')
 
-    def ReadShort(self) -> int:
-        body = self.__body[0:2]
-        self.__body = self.__body[2:]
-        return int.from_bytes(body, 'big')
+    def read_byte(self) -> int:
+        return self.read(1)[0]
