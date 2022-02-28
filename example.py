@@ -16,7 +16,7 @@ def ShutUp(session: pcqq.Session):
     pcqq.set_group_shutup(session.group_id, int(uid), int(time))
 
 
-@pcqq.on_command("运行代码")
+@pcqq.on_command("运行代码", prompt="请提交python3代码")
 def RunCode(session: pcqq.Session):
     request = urllib.request.Request(
         method="POST",
@@ -68,7 +68,6 @@ def PlayMusic(session: pcqq.Session):
         audio="http://dl.stream.qqmusic.qq.com/" + audio,
         cover="https://y.qq.com/music/photo_new/" + html[start:end]
     ))
-pcqq.const.MUSIC_CODE = """<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><msg serviceID="2" templateID="1" action="web" brief="[分享] {title}" sourceMsgId="0" url="{url}" flag="0" adverSign="0" multiMsgFlag="0"><item layout="2"><audio cover="{cover}" src="{audio}" /><title>{title}</title><summary>{content}</summary></item><source name="" icon="" action="" appid="-1" /></msg>"""
 
 # 不填入账密信息代表使用扫码登录
 pcqq.run_bot()
