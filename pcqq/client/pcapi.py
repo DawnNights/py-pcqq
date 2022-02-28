@@ -5,10 +5,16 @@ import pcqq.utils as utils
 import pcqq.const as const
 import pcqq.binary as binary
 
-# net = net.QQStruct()
-
 
 def send_friend_msg(user_id: int, msg_data: bytes):
+    """
+    发送好友消息
+
+    :param user_id: 好友QQ号
+
+    :param msg_data: PCQQ消息协议数据
+
+    """
     writer = binary.Writer()
     time_stamp = int(time.time()).to_bytes(4, 'big')
 
@@ -39,6 +45,14 @@ def send_friend_msg(user_id: int, msg_data: bytes):
 
 
 def send_group_msg(group_id: int, msg_data: bytes):
+    """
+    发送群消息
+
+    :param group_id: 目标群号
+
+    :param msg_data: PCQQ消息协议数据
+
+    """
     writer = binary.Writer()
     time_stamp = int(time.time()).to_bytes(4, 'big')
 

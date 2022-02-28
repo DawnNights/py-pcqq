@@ -15,6 +15,7 @@ MUSIC_CODE = """<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
     </item>
     <source name="" icon="" action="" appid="-1" />
 </msg>"""
+QRCODE_SIZE = 37
 
 FACE_AMAZED = 0
 FACE_CURLEDLIP = 1

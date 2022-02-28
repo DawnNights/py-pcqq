@@ -1,3 +1,5 @@
+import pcqq.logger as logger
+
 def get_char(r, g, b, alpha=256):
     if alpha == 0:
         return ' '
@@ -37,8 +39,8 @@ def make_qrtex(QR_Tab):
 def print_qrcode(path="QrCode.jpg", length: int = 37):
     try:
         from PIL import Image
-    except Exception as err:
-        print(err)
+    except:
+        logger.error("无法在终端输出二维码，请先安装 pillow 库")
         return
 
     im = Image.open(path)

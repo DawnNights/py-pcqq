@@ -1,6 +1,7 @@
 import os
 import time
 import platform
+import subprocess
 
 import pcqq.network as net
 import pcqq.utils as utils
@@ -105,10 +106,18 @@ def apply_qrcode():
         f.write(reader.read(reader.read_int16()))
         logger.info('登录二维码获取成功，已保存至' + path)
 
-    if platform.system() == "Windows":
-        os.startfile(path)
-    else:
-        utils.print_qrcode(path)
+    system = platform.system()
+    try:
+        # 用系统默认程序打开图片文件
+        if system == "Windows":
+            os.startfile(path)
+        elif system == "Linux":
+            subprocess.call(["xdg-open", path])
+        else:
+            subprocess.call(["open", path])
+    except:
+        # 使用pillow库在终端上打印二维码图片
+        utils.print_qrcode(path, const.QRCODE_SIZE)
 
 
 def check_scan_state():

@@ -5,6 +5,16 @@ import pcqq.logger as logger
 
 
 def set_group_card(user_id: int, group_id: int,  nickname: str) -> None:
+    """
+    修改群成员卡片
+
+    :param user_id: 被修改成员的QQ号
+
+    :param group_id: 被修改成员所在的群号
+
+    :param nickname: 修改后的昵称
+
+    """
     ret = json.loads(net.httper.post_with_cookie(
         url="https://qinfo.clt.qq.com/cgi-bin/qun_info/set_group_card",
         u=user_id,
@@ -27,6 +37,16 @@ def set_group_card(user_id: int, group_id: int,  nickname: str) -> None:
 
 
 def set_group_shutup(group_id: int, user_id: int, secs: int = 60):
+    """
+    设置群成员禁言
+
+    :param user_id: 被禁言成员的QQ号
+
+    :param group_id: 被禁言成员所在的群号
+
+    :param secs: 禁言时长(单位: 秒)
+    
+    """
     ret=json.loads(net.httper.post_with_cookie(
         url="https://qinfo.clt.qq.com/cgi-bin/qun_info/set_group_shutup",
         shutup_list=json.dumps([{"uin": user_id, "t": secs}]),
@@ -92,6 +112,9 @@ def cache_set_info(info: dict):
 
 
 def get_group_members_nocache(group_id: int) -> list:
+    """
+    获取群成员信息
+    """
     ret = json.loads(net.httper.post_with_cookie(
         "https://qinfo.clt.qq.com/cgi-bin/qun_info/get_group_members_new",
         gc=group_id,
@@ -113,6 +136,9 @@ def get_group_members_nocache(group_id: int) -> list:
 
 
 def get_group_info_all_nocache(group_id: int) -> dict:
+    """
+    获取群信息
+    """
     ret = json.loads(net.httper.post_with_cookie(
         "https://qinfo.clt.qq.com/cgi-bin/qun_info/get_group_info_all",
         gc=group_id,
@@ -135,6 +161,13 @@ name_cache = {}  # 用户昵称缓存
 
 
 def get_user_name(user_id: int) -> str:
+    """
+    取用户昵称
+
+    :param user_id: 对方QQ号
+
+    """
+
     if not user_id in name_cache:
         ret = net.httper.get(
             "https://r.qzone.qq.com/fcg-bin/cgi_get_score.fcg",
@@ -147,6 +180,12 @@ def get_user_name(user_id: int) -> str:
 
 
 def get_group_name(group_id: int) -> str:
+    """
+    取群名称
+
+    :param group_id: 群号
+
+    """
     ret = cache.select("ginfo", group_id=group_id)
     if ret:
         return ret[0][0]
@@ -155,6 +194,14 @@ def get_group_name(group_id: int) -> str:
 
 
 def get_group_cord(user_id: int, group_id: int) -> str:
+    """
+    取群成员卡片
+
+    :param user_id: 群成员的QQ号
+
+    :param group_id: 群成员所在的群号
+
+    """
     ret = cache.select("gmember", user_id=user_id, group_id=group_id)
     if ret:
         return ret[0][1]

@@ -21,12 +21,30 @@ class Session:
     msg_group: List[Dict] = []
 
     def send_msg(self, msg: str, escape: bool = True):
+        """
+        根据事件来源自动回复
+
+        :param msg: 发送的消息文本或PQ码
+
+        :param escape: 是否解析消息中的PQ码
+
+        """
         if self.group_id:
             self.send_group_msg(self.group_id, msg, escape)
         else:
             self.send_friend_msg(self.user_id, msg, escape)
 
     def send_friend_msg(self, user_id: int, msg: str, escape: bool = True):
+        """
+        发送好友消息
+
+        :param user_id: 好友的账号
+
+        :param msg: 发送的消息文本或PQ码
+
+        :param escape: 是否解析消息中的PQ码
+
+        """
         if escape:
             cli.send_friend_msg(user_id, message.pqcode_escape(msg))
         else:
@@ -37,6 +55,16 @@ class Session:
         ))
 
     def send_group_msg(self, group_id: int, msg: str, escape: bool = True):
+        """
+        发送群消息
+
+        :param group_id: 目标群号
+
+        :param msg: 发送的消息文本或PQ码
+
+        :param escape: 是否解析消息中的PQ码
+
+        """
         if escape:
             cli.send_group_msg(group_id, message.pqcode_escape(msg, group_id))
         else:
@@ -99,7 +127,7 @@ def on_event(*rules: Callable[[Session], Generator], priority: int = 10, block: 
     return wrapper
 
 
-def on_full(keyword: str, *rules: Callable[[Session], Generator], prompt: str = '',  **kwargs):
+def on_full(keyword: str, *rules: Callable[[Session], Generator],**kwargs):
     '''
     完全匹配触发器
 
@@ -117,13 +145,7 @@ def on_full(keyword: str, *rules: Callable[[Session], Generator], prompt: str = 
 
     '''
     def full_rule(session: Session):
-        if keyword == session.message:
-            if prompt:
-                session.send_msg(f"[PQ:at,qq={session.user_id}]" + prompt)
-                session.matched = yield session.user_id
-            else:
-                yield True
-        yield False
+        yield keyword == session.message
     return on_event(*rules, full_rule, **kwargs)
 
 
@@ -145,13 +167,7 @@ def on_fulls(keywords: List[str], *rules: Callable[[Session], Generator], prompt
 
     '''
     def fulls_rule(session: Session):
-        if session.message in keywords:
-            if prompt:
-                session.send_msg(f"[PQ:at,qq={session.user_id}]" + prompt)
-                session.matched = yield session.user_id
-            else:
-                yield True
-        yield False
+        yield session.message in keywords
     return on_event(*rules, fulls_rule, **kwargs)
 
 
@@ -177,7 +193,8 @@ def on_command(cmd: str, *rules: Callable[[Session], Generator], prompt: str = '
             session.matched = session.message[len(cmd):].strip()
 
             if not session.matched and prompt:
-                session.send_msg(f"[PQ:at,qq={session.user_id}]" + prompt)
+                at = message.pqcode_compile("at", qq=session.user_id)
+                session.send_msg(at + prompt)
                 session.matched = yield session.user_id
             yield bool(session.matched)
         yield False
@@ -206,7 +223,8 @@ def on_commands(cmds: List[str], *rules: Callable[[Session], Generator], prompt:
             if session.message.startswith(cmd):
                 session.matched = session.message[len(cmd):].strip()
                 if not session.matched and prompt:
-                    session.send_msg(f"[PQ:at,qq={session.user_id}]" + prompt)
+                    at = message.pqcode_compile("at", qq=session.user_id)
+                    session.send_msg(at + prompt)
                     session.matched = yield session.user_id
                 yield bool(session.matched)
         yield False
@@ -215,7 +233,7 @@ def on_commands(cmds: List[str], *rules: Callable[[Session], Generator], prompt:
 
 def on_regex(pattern: str, *rules: Callable[[Session], Generator],  **kwargs):
     '''
-    命令组匹配触发器
+    正则匹配触发器
 
     : param pattern: 正则语句
 
@@ -225,7 +243,7 @@ def on_regex(pattern: str, *rules: Callable[[Session], Generator],  **kwargs):
 
     : param block: 当前插件处理成功后是否阻断后续插件执行
 
-    匹配结果保留至session.matched
+    匹配结果以list的形式保留至session.matched
 
     '''
     def reg_rule(session: Session):

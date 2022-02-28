@@ -66,6 +66,14 @@ async def main_handle(recv_data: bytes):
 
 
 def login_for_test(uin: int = 0, password: str = ""):
+    """
+    仅登录，不处理事件
+
+    :param uin: 用于登录的QQ号(留空则使用扫码登录)
+
+    :param uin: 登录QQ号的密码(留空则使用扫码登录)
+
+    """
     cli.say_hello(False)
 
     if os.path.exists("session.token"):  # 本地token登录
@@ -101,6 +109,14 @@ def login_for_test(uin: int = 0, password: str = ""):
 
 
 def run_bot(uin: int = 0, password: str = ""):
+    """
+    登录并处理事件
+
+    :param uin: 用于登录的QQ号(留空则使用扫码登录)
+
+    :param uin: 登录QQ号的密码(留空则使用扫码登录)
+
+    """
     login_for_test(uin, password)
     net.run_thread(cli.keep_heatbeat)   # 开启心跳线程
 
