@@ -6,15 +6,7 @@ MSG_XML = 0x14
 MSG_JSON = 0x25
 
 
-MUSIC_CODE = """<?xml version='1.0' encoding='UTF-8' standalone='yes' ?>
-<msg serviceID="2" templateID="1" action="web" brief="[分享] {title}" sourceMsgId="0" url="{url}" flag="0" adverSign="0" multiMsgFlag="0">
-    <item layout="2">
-        <audio cover="{cover}" src="{audio}" />
-        <title>{title}</title>
-        <summary>{content}</summary>
-    </item>
-    <source name="" icon="" action="" appid="-1" />
-</msg>"""
+MUSIC_CODE = """<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><msg serviceID="2" templateID="1" action="web" brief="[分享] {title}" sourceMsgId="0" url="{url}" flag="0" adverSign="0" multiMsgFlag="0"><item layout="2"><audio cover="{cover}" src="{audio}" /><title>{title}</title><summary>{content}</summary></item><source name="" icon="" action="" appid="-1" /></msg>"""
 QRCODE_SIZE = 37
 
 FACE_AMAZED = 0
