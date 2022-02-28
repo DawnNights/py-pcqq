@@ -55,7 +55,4 @@ def print_qrcode(path="QrCode.jpg", length: int = 37):
             txt += get_char(*content)
         txt += '\n'
     im.close()
-
-    from os import remove
-    remove(path=path)
     print(make_qrtex(txt))
