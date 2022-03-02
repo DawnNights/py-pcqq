@@ -15,7 +15,8 @@ from .client import (
 
 from .plugin import (
     Session,
-    on_event,
+    on,
+    on_type,
     on_full,
     on_fulls,
     on_command,

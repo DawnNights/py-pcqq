@@ -1,4 +1,5 @@
 import re
+
 import pcqq.client as cli
 import pcqq.network as net
 import pcqq.logger as logger
@@ -46,7 +47,7 @@ class Session:
 
         """
         if escape:
-            cli.send_friend_msg(user_id, message.pqcode_escape(msg))
+            cli.send_friend_msg(user_id, pqcode_escape(msg, self))
         else:
             cli.send_friend_msg(user_id, message.text(msg))
 
@@ -66,13 +67,32 @@ class Session:
 
         """
         if escape:
-            cli.send_group_msg(group_id, message.pqcode_escape(msg, group_id))
+            cli.send_group_msg(group_id, pqcode_escape(
+                msg, self), "[PQ:image" in msg)
         else:
             cli.send_group_msg(group_id, message.text(msg))
 
         logger.info(f"发送群消息: %s -> %s(%d)" % (
             msg, cli.get_group_name(group_id), group_id
         ))
+
+
+def pqcode_escape(pqmsg: str, session: Session) -> bytes:
+    ret = bytes()
+    pqcodes = re.findall(r'\[PQ:\w+?.*?]', pqmsg)
+
+    for code in pqcodes:
+        idx = pqmsg.find(code)
+        ret += message.text(pqmsg[0:idx])
+        pqmsg = pqmsg[idx+len(code):]
+
+        ret += message.pqcode(
+            session=session,
+            typ=code[4:code.find(",")].lower(),
+            params=dict(re.findall(r',([\w\-.]+?)=([^,\]]+)', code))
+        )
+
+    return ret + message.text(pqmsg) if pqmsg else ret
 
 
 class Plugin:
@@ -103,9 +123,9 @@ class Plugin:
 PluginPool: List[Plugin] = []
 
 
-def on_event(*rules: Callable[[Session], Generator], priority: int = 10, block: bool = False):
+def on(*rules: Callable[[Session], Generator], priority: int = 10, block: bool = False):
     """
-    事件触发器
+    基础触发器
 
     : param rules: 事件匹配规则集
 
@@ -127,9 +147,9 @@ def on_event(*rules: Callable[[Session], Generator], priority: int = 10, block: 
     return wrapper
 
 
-def on_full(keyword: str, *rules: Callable[[Session], Generator],**kwargs):
+def on_type(type: str, *rules: Callable[[Session], Generator], **kwargs):
     '''
-    完全匹配触发器
+    事件触发器
 
     : param keyword: 匹配关键词
 
@@ -144,20 +164,37 @@ def on_full(keyword: str, *rules: Callable[[Session], Generator],**kwargs):
     匹配结果保留至session.matched
 
     '''
+    def type_rule(session: Session):
+        yield type == session.event_type
+    return on(*rules, type_rule, **kwargs)
+
+def on_full(keyword: str, *rules: Callable[[Session], Generator], **kwargs):
+    '''
+    完全匹配触发器
+
+    : param keyword: 匹配关键词
+
+    : param rules: 事件匹配规则集
+
+    : param priority: 插件优先级(数值越小级别越高)
+
+    : param block: 当前插件处理成功后是否阻断后续插件执行
+
+    匹配结果保留至session.matched
+
+    '''
     def full_rule(session: Session):
         yield keyword == session.message
-    return on_event(*rules, full_rule, **kwargs)
+    return on(*rules, full_rule, **kwargs)
 
 
-def on_fulls(keywords: List[str], *rules: Callable[[Session], Generator], prompt: str = '',  **kwargs):
+def on_fulls(keywords: List[str], *rules: Callable[[Session], Generator],  **kwargs):
     '''
     完全匹配组触发器
 
     : param keywords: 匹配关键词组
 
     : param rules: 事件匹配规则集
-
-    : param prompt: 发送prompt语句并等待传参
 
     : param priority: 插件优先级(数值越小级别越高)
 
@@ -168,7 +205,7 @@ def on_fulls(keywords: List[str], *rules: Callable[[Session], Generator], prompt
     '''
     def fulls_rule(session: Session):
         yield session.message in keywords
-    return on_event(*rules, fulls_rule, **kwargs)
+    return on(*rules, fulls_rule, **kwargs)
 
 
 def on_command(cmd: str, *rules: Callable[[Session], Generator], prompt: str = '',  **kwargs):
@@ -193,12 +230,11 @@ def on_command(cmd: str, *rules: Callable[[Session], Generator], prompt: str = '
             session.matched = session.message[len(cmd):].strip()
 
             if not session.matched and prompt:
-                at = message.pqcode_compile("at", qq=session.user_id)
-                session.send_msg(at + prompt)
+                session.send_msg(f"[PQ:at,qq={session.user_id}]{prompt}")
                 session.matched = yield session.user_id
             yield bool(session.matched)
         yield False
-    return on_event(*rules, cmd_rule, **kwargs)
+    return on(*rules, cmd_rule, **kwargs)
 
 
 def on_commands(cmds: List[str], *rules: Callable[[Session], Generator], prompt: str = '',  **kwargs):
@@ -223,12 +259,11 @@ def on_commands(cmds: List[str], *rules: Callable[[Session], Generator], prompt:
             if session.message.startswith(cmd):
                 session.matched = session.message[len(cmd):].strip()
                 if not session.matched and prompt:
-                    at = message.pqcode_compile("at", qq=session.user_id)
-                    session.send_msg(at + prompt)
+                    session.send_msg(f"[PQ:at,qq={session.user_id}]{prompt}")
                     session.matched = yield session.user_id
                 yield bool(session.matched)
         yield False
-    return on_event(*rules, cmds_rule, **kwargs)
+    return on(*rules, cmds_rule, **kwargs)
 
 
 def on_regex(pattern: str, *rules: Callable[[Session], Generator],  **kwargs):
@@ -250,4 +285,4 @@ def on_regex(pattern: str, *rules: Callable[[Session], Generator],  **kwargs):
         session.matched = re.findall(pattern, session.message)
         yield bool(session.matched)
 
-    return on_event(*rules, reg_rule, **kwargs)
+    return on(*rules, reg_rule, **kwargs)

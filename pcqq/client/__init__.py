@@ -1,6 +1,8 @@
 from .pcapi import (
     send_group_msg,
-    send_friend_msg
+    send_friend_msg,
+    upload_group_image,
+    upload_friend_image
 )
 
 from .receipt import (

@@ -25,7 +25,7 @@ def unpack(recv_data: bytes) -> tuple:
     return cmd, sequence, body
 
 
-async def session_handler(session: plugin.Session):
+async def plugin_handler(session: plugin.Session):
     if session.user_id in net.waiter:
         ret = net.waiter.pop(session.user_id)[0]
         ret.send(session.message)
@@ -62,7 +62,7 @@ async def main_handle(recv_data: bytes):
     else:
         return
 
-    await session_handler(session)
+    await plugin_handler(session)
 
 
 def login_for_test(uin: int = 0, password: str = ""):

@@ -321,7 +321,6 @@ def set_online(state: int):
 
 def login_out():
     # 0062包 注销当前登录
-    os.remove("session.token")
     logger.info(f"账号 {net.uin} 已退出登录，欢迎用户 {net.nickname} 下次使用本协议库")
     net.send_packet(
         "00 62",

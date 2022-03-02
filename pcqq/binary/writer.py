@@ -1,5 +1,13 @@
 import io
-import pcqq.utils as utils
+
+
+def varint(num: int) -> bytes:
+    val = bytearray()
+    while num > 127:
+        val.append(0x80 | num & 0x7F)
+        num = num >> 7
+    val.append(num)
+    return bytes(val)
 
 
 class Writer:
@@ -13,10 +21,7 @@ class Writer:
 
     def write(self, bin: bytes) -> None:
         self.raw.write(bin)
-
-    def write_int(self, num: int) -> None:
-        self.write(utils.int_to_bytes(num))
-
+    
     def write_int16(self, num: int) -> None:
         self.write(num.to_bytes(2, 'big'))
 
@@ -30,7 +35,18 @@ class Writer:
         self.write(byte.to_bytes(1, 'big'))
 
     def write_varint(self, num: int) -> None:
-        while num > 127:
-            self.write_byte(0x80 | num & 0x7F)
-            num = num >> 7
-        self.write_byte(num)
+        self.write(varint(num))
+
+    def write_pbint(self, num: int, mark: int, isid: bool = True):
+        mark = 8 * mark if isid else mark
+        self.write_varint(mark)
+        self.write_varint(num)
+
+    def write_pbdata(self, data: bytes, mark: int, isid: bool = True):
+        mark = 2 + 8 * mark if isid else mark
+        self.write_varint(mark)
+        self.write_byte(len(data))
+        self.write(data)
+
+    def write_pbhex(self, hex: str, mark: int, isid: bool = True):
+        return self.write_pbdata(bytes.fromhex(hex), mark, isid)

@@ -1,5 +1,6 @@
 import time
 import random
+import string
 import hashlib
 import asyncio
 
@@ -10,6 +11,10 @@ from urllib.parse import urlparse, urlencode
 
 def hashmd5(src: bytes):
     return hashlib.md5(src).digest()
+
+
+def randstr(size: int):
+    return ''.join(random.sample(string.ascii_letters + string.digits, 23))
 
 
 def randbytes(size: int):
@@ -23,15 +28,10 @@ def gtk_skey(skey: str) -> int:
     return accu & 2147483647
 
 
-def int_to_bytes(num: int) -> bytes:
-    size = 1
-    while num >= int.from_bytes(b'\xff' * size, 'big'):
-        size += 1
-    return num.to_bytes(size, 'big')
-
-def now_add_time(seconds:int):
-    time_stamp  = int(time.time()) + seconds
+def now_add_time(seconds: int):
+    time_stamp = int(time.time()) + seconds
     return time.strftime("%Y年%m月%d日 %H:%M:%S", time.localtime(time_stamp))
+
 
 class Httper:
     def __init__(self, cookies: str) -> None:
