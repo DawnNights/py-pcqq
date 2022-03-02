@@ -1,6 +1,5 @@
 import json
 import urllib
-from wsgiref import headers
 
 import pcqq  # py-pcqq
 
