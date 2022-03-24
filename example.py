@@ -7,7 +7,6 @@ async def Welcome(session: pcqq.Session):
         await session.send_msg({"type": "at", "qq": session.target_id}, "欢迎新人")
     else:
         await session.send_msg(
-            {"type":"image","url": f"http://q1.qlogo.cn/g?b=qq&nk={session.user_id}&s=640"},
             {"type": "at", "qq": session.target_id},
             f"({session.target_id})退出了群聊"
             )
