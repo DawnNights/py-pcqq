@@ -36,7 +36,7 @@ def make_qrtex(QR_Tab):
     return print_tex
 
 
-def print_qrcode(path="QrCode.jpg", length: int = 37):
+def print_qrcode(path:str, length: int):
     try:
         from PIL import Image
     except:

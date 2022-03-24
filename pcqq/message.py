@@ -1,16 +1,17 @@
 import zlib
 import uuid
 import json
-import base64
-import urllib.request
+import asyncio
+from urllib import parse
 
 import pcqq.client as cli
+import pcqq.network as net
 import pcqq.utils as utils
 import pcqq.const as const
 import pcqq.binary as binary
 
 
-def text(text: str):
+def text(text: str) -> bytes:
     writer = binary.Writer()
 
     data = text.encode()
@@ -37,25 +38,25 @@ def face(face_id: int) -> bytes:
     return writer.clear()
 
 
-def at(user_id: int, group_id: int) -> bytes:
-    if group_id:
-        nickname = "@" + cli.get_group_cord(user_id, group_id)
-    else:
-        nickname = "@" + cli.get_user_name(user_id)
+async def at(user_id: int, group_id: int) -> bytes:
+    name = "@" + await net.get_user_cache(
+        user_id=user_id,
+        group_id=group_id
+    )
 
     writer = binary.Writer()
     writer.write_hex("00 01 00 00")
-    writer.write_int16(len(nickname))
+    writer.write_int16(len(name))
     writer.write_hex("00")
     writer.write_int32(user_id)
     writer.write_hex("00 00")
     data = writer.clear()
-    nickname = nickname.encode()
+    name = name.encode()
 
     writer.__init__()
     writer.write_byte(0x01)
-    writer.write_int16(len(nickname))
-    writer.write(nickname)
+    writer.write_int16(len(name))
+    writer.write(name)
     writer.write_byte(0x06)
     writer.write_int16(len(data))
     writer.write(data)
@@ -101,15 +102,14 @@ def music(
 
     return xml(xml_code)
 
+async def qqmusic(keyword: str):
+    info = json.loads((await cli.webget(
+        url="https://c.y.qq.com/soso/fcgi-bin/client_search_cp?w=" +
+            parse.quote(keyword)
+    )).content[9:-1])["data"]["song"]["list"][0]
 
-def qqmusic(keyword: str):
-    keyword = urllib.parse.quote(keyword)
-    with urllib.request.urlopen("https://c.y.qq.com/soso/fcgi-bin/client_search_cp?w=" + keyword) as ret:
-        info = json.loads(ret.read()[9:-1])["data"]["song"]["list"][0]
-
-    request = urllib.request.Request(
-        method="GET",
-        url="https://u.y.qq.com/cgi-bin/musicu.fcg?data=" + urllib.parse.quote(
+    audio = (await cli.webget(
+        url="https://u.y.qq.com/cgi-bin/musicu.fcg?data=" + parse.quote(
             json.dumps(
                 {
                     "comm": {"uin": 0, "format": "json", "ct": 24, "cv": 0},
@@ -117,34 +117,50 @@ def qqmusic(keyword: str):
                     "req_0": {"module": "vkey.GetVkeyServer", "method": "CgiGetVkey", "param": {"guid": "3982823384", "songmid": [info["songmid"]], "songtype": [0], "uin": "0", "loginflag": 1, "platform": "20"}}
                 }
             ))
-    )
-    with urllib.request.urlopen(request) as ret:
-        audio = json.loads(ret.read())[
-            "req_0"]["data"]["midurlinfo"][0]["purl"]
+    )).json()["req_0"]["data"]["midurlinfo"][0]["purl"]
 
-    with urllib.request.urlopen(f"https://y.qq.com/n/yqq/song/{info['songmid']}.html") as ret:
-        html = ret.read().decode()
-        start = html.find(r"photo_new\u002F")+15
-        end = html.find(r"?max_age", start)
+    html = (await cli.webget(f"https://y.qq.com/n/ryqq/songDetail/{info['songmid']}")).content
+    start = html.find(b'photo_new\\u002F')+15
+    end = html.find(b"?max_age", start)
 
     return music(
         title=info["songname"],
         content=info["singer"][0]["name"],
         url=f"https://y.qq.com/n/yqq/song/{info['songmid']}.html",
         audio="http://dl.stream.qqmusic.qq.com/" + audio,
-        cover="https://y.qq.com/music/photo_new/" + html[start:end]
+        cover="https://y.qq.com/music/photo_new/" + html[start:end].decode()
     )
 
 
-def image_group(group_id: int, im_data: bytes) -> bytes:
-    cli.upload_group_image(group_id, im_data)
+class Image:
+    def __init__(self, im_data: bytes) -> None:
+        self.ukey = None
+        self.picid = None
+        self.finish = False
+
+        self.data = im_data
+        self.size = len(im_data)
+        self.hash = utils.hashmd5(im_data)
+        self.width, self.height = utils.img_size(im_data)
+        self.uuid = "{%s}.jpg" % (str(uuid.UUID(bytes=self.hash)).upper())
+
+
+async def image_group(group_id: int, image: Image) -> bytes:
     writer = binary.Writer()
-    im_uuid = uuid.UUID(bytes=utils.hashmd5(im_data))
-    im_uuid = "{%s}.jpg" % (str(im_uuid).upper())
+    await net.upload_group_image(group_id, image)
+
+    wait_times = 90
+    while not image.finish:
+        await asyncio.sleep(1)
+        wait_times -= 1
+        if not wait_times:
+            raise Exception(f"获取图片 [PQ:image,file={image.hash.hex().upper()}] 超时")
+    
+
 
     writer.write_hex("03 00 CB 02")
-    writer.write_int16(len(im_uuid))
-    writer.write(im_uuid.encode())
+    writer.write_int16(len(image.uuid))
+    writer.write(image.uuid.encode())
     writer.write_hex("04 00 04")
 
     writer.write_hex("84 74 B1 53 05 00 04 BC")
@@ -162,84 +178,54 @@ def image_group(group_id: int, im_data: bytes) -> bytes:
     writer.write_hex("20 20 20 20 20 20 20 20")
     writer.write_hex("20 20 20 20 20 20 20 20")
 
-    writer.write(im_uuid.encode())
+    writer.write(image.uuid.encode())
     writer.write_hex("41")
     return writer.clear()
 
 
-def image_friend(user_id: int, im_data: bytes) -> bytes:
-    pic_id = cli.upload_friend_image(user_id, im_data)
+async def image_friend(user_id: int, image: Image) -> bytes:
     writer = binary.Writer()
-    width, height = utils.img_size_get(im_data)
+    await net.upload_friend_image(user_id, image)
+    
+    wait_times = 90
+    while not image.finish:
+        await asyncio.sleep(1)
+        wait_times -= 1
+        if not wait_times:
+            raise Exception(f"获取图片 [PQ:image,file={image.hash.hex().upper()}] 超时")
 
-    writer.write_hex("06 00 F3 02")
+    writer.write_hex("B6 E8 AF AD E4 BD 93 E7 AE 80 00 00 06 01 43 02")
     writer.write_hex("00 1B")
-    writer.write((utils.randstr(23) + ".jqg").encode())
+    writer.write((utils.randstr(23) + ".jpg").encode())
     writer.write_hex("03 00 04")
-    writer.write_int32(len(im_data))
+    writer.write_int32(image.size)
     writer.write_hex("04")
-    writer.write_int32(len(pic_id))
-    writer.write(pic_id)
+    writer.write_int16(len(image.picid))
+    writer.write(image.picid)
     writer.write_hex("14 00 04 11 00 00 00 0B 00 00 18")
-    writer.write_int32(len(pic_id))
-    writer.write(pic_id)
+    writer.write_int16(len(image.picid))
+    writer.write(image.picid)
     writer.write_hex("19 00 04 00 00")
-    writer.write_int16(width)
+    writer.write_int16(image.width)
     writer.write_hex("1A 00 04 00 00")
-    writer.write_int16(height)
-    writer.write_hex("FF 00 63 16")
+    writer.write_int16(image.height)
+    writer.write_hex("1F 00 04 00")
 
-    size = str(len(im_data)).encode()
+    writer.write_hex("00 03 E8 1B 00 10")
+    writer.write(image.hash)
+    writer.write_hex("FF 00 75 16")
+
+    writer.write(b' 117101061CB')
+    size = str(image.size).encode()
     if len(size) > 5:
-        writer.write_hex("20 20 39 39 31 30 20 38 38 31 43 42 20 20 20 20")
+        writer.write(b' ' * 4)
     else:
-        writer.write_hex("20 20 39 39 31 30 20 38 38 31 43 42 20 20 20 20 20")
+        writer.write(b' ' * 5)
+
     writer.write(size)
-
-    writer.write_hex("65")
-    writer.write((utils.hashmd5(im_data).hex().upper()+".jpg").encode())
-    writer.write_hex("66")
-    writer.write(pic_id)
-    writer.write_hex("41")
+    writer.write_byte(ord("e"))
+    writer.write((image.hash.hex().upper()+".jpg").encode())
+    writer.write_byte(ord("x"))
+    writer.write(image.picid)
+    writer.write_byte(ord("A"))
     return writer.clear()
-
-
-def pqcode(typ: str, params: dict, session) -> bytes:
-    if typ == "at" and session.group_id and "qq" in params:
-        return at(int(params["qq"]), session.group_id)
-    elif typ == "face" and "id" in params:
-        return face(int(params["id"]))
-    elif typ == "xml" and "data" in params:
-        return xml(params["data"])
-    elif typ == "music":
-        if "keyword" in params:
-            return qqmusic(params["keyword"])
-        elif len(params) == 5:
-            return music(**params)
-    elif typ == "image":
-        if "url" in params:
-            rsp = urllib.request.urlopen(urllib.request.Request(
-                method="GET",
-                url=params["url"],
-                headers={
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:97.0) Gecko/20100101 Firefox/97.0",
-                    "Host": "i.pixiv.re"
-                }
-            ))
-            im_data = rsp.read()
-            rsp.close()
-
-        elif "file" in params:
-            file = open(params["file"], "rb")
-            im_data = file.read()
-            file.close()
-        elif "base64" in params:
-            im_data = base64.b64decode(params["base64"])
-
-        if session.group_id:
-            return image_group(session.group_id, im_data)
-        elif session.user_id:
-            pass  # 暂时不支持
-            # return image_friend(session.user_id, im_data)
-
-    return bytes()

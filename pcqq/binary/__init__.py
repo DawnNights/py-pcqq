@@ -4,6 +4,7 @@ from .writer import Writer
 from .qqtlv import (
     tlv112,
     tlv30f,
+    tlv004,
     tlv005,
     tlv303,
     tlv006,
@@ -11,6 +12,7 @@ from .qqtlv import (
     tlv01a,
     tlv018,
     tlv019,
+    tlv305,
     tlv114,
     tlv103,
     tlv312,

@@ -1,33 +1,30 @@
-MSG_TEXT = 0x01
-MSG_FACE = 0x02
-MSG_IMAGE_GROUP = 0X03
-MSG_IMAGE_FRIEND = 0X06
-MSG_XML = 0x14
-MSG_JSON = 0x25
+QRCODE_SIZE = 37
+BUF_SIZE = 1024 * 15
 
+TCP_PORT = 443
+UDP_PORT = 8000
+HTTP_PORT = 80
+HTTPS_PORT = 443
 
 MUSIC_CODE = """<?xml version='1.0' encoding='UTF-8' standalone='yes' ?><msg serviceID="2" templateID="1" action="web" brief="[分享] {title}" sourceMsgId="0" url="{url}" flag="0" adverSign="0" multiMsgFlag="0"><item layout="2"><audio cover="{cover}" src="{audio}" /><title>{title}</title><summary>{content}</summary></item><source name="" icon="" action="" appid="-1" /></msg>"""
-QRCODE_SIZE = 37
 
-FACE_AMAZED = 0
-FACE_CURLEDLIP = 1
-FACE_LUST = 2
-FACE_DULL = 3
-FACE_PROUD = 4
-FACE_WEEP = 5
-FACE_SHY = 6
-FACE_SHUTUP = 7
-FACE_SLEEP = 8
-FACE_CRY = 9
-FACE_AWKWARD = 10
-FACE_ANGRY = 11
-FACE_NAUGHTY = 12
-FACE_TEETH = 13
-FACE_SMILE = 14
-FACE_UNWELL = 15
-FACE_COOL = 16
-
-
+FACE_AMAZED = 0  # 表情-惊讶
+FACE_CURLEDLIP = 1  # 表情-撇嘴
+FACE_LUST = 2   # 表情-色
+FACE_DULL = 3   # 表情-发呆
+FACE_PROUD = 4  # 表情-得意
+FACE_WEEP = 5   # 表情-流泪
+FACE_SHY = 6    # 表情-害羞
+FACE_SHUTUP = 7  # 表情-闭嘴
+FACE_SLEEP = 8  # 表情-睡
+FACE_CRY = 9    # 表情-大哭
+FACE_AWKWARD = 10   # 表情-尴尬
+FACE_ANGRY = 11  # 表情-发怒
+FACE_NAUGHTY = 12   # 表情-调皮
+FACE_TEETH = 13  # 表情-呲牙
+FACE_SMILE = 14  # 表情-微笑
+FACE_UNWELL = 15  # 表情-难过
+FACE_COOL = 16  # 表情-酷
 # {
 #     14: "微笑",
 #     1: "撇嘴",

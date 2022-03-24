@@ -11,5 +11,6 @@ logging.basicConfig(
 
 logger = logging.getLogger('PCQQ')
 logger.fatal = sys.exit
+logging.getLogger("asyncio").setLevel(logging.CRITICAL)
 
 sys.modules[__name__] = logger

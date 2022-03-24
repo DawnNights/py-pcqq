@@ -1,62 +1,50 @@
-import json
-import urllib
-
-import pcqq  # py-pcqq
+import pcqq
 
 
-@pcqq.on_type("group_increase")
-def MemberAdd(session: pcqq.Session):
-    session.send_msg(f"[PQ:at,qq={session.user_id}]欢迎新人~")
+@pcqq.on(pcqq.check_type("group_increase", "group_decrease"))
+async def Welcome(session: pcqq.Session):
+    if session.event_type == "group_increase":
+        await session.send_msg({"type": "at", "qq": session.target_id}, "欢迎新人")
+    else:
+        await session.send_msg(
+            {"type":"image","url": f"http://q1.qlogo.cn/g?b=qq&nk={session.user_id}&s=640"},
+            {"type": "at", "qq": session.target_id},
+            f"({session.target_id})退出了群聊"
+            )
 
 
 @pcqq.on_full("报时")
-def NowTime(session: pcqq.Session):
-    now = pcqq.utils.now_add_time(0)
-    session.send_msg("现在时间是: " + now)
+async def NowTime(session: pcqq.Session):
+    await session.send_msg({"type": "at", "qq": session.user_id}, pcqq.utils.time_lapse(0))
 
 
-@pcqq.on_fulls(["来份涩图", "来张涩图", "搞快点"])
-def SetuTime(session: pcqq.Session):
-    with urllib.request.urlopen("https://api.lolicon.app/setu/v2?size=regular") as rsp:
-        ret = json.loads(rsp.read())["data"][0]
-    
-    url = ret["urls"]["regular"].replace("pixiv.cat", "pixiv.re")
-    session.send_msg("\n".join([
-        "[PQ:image,url=%s]" % (url),
-        "Title: %s" % (ret["title"]),
-        "Author: %s" % (ret["author"]),
-        "Tags: %s" % (json.dumps(ret["tags"], ensure_ascii=False))
+@pcqq.on_fulls(["来份涩图", "我要涩涩"])
+async def SetuTime(session: pcqq.Session):
+    ret = (await pcqq.client.webget(
+        url="https://api.lolicon.app/setu/v2?size=original&size=regular&proxy=i.pixiv.re"
+    )).json()["data"][0]
+    print("网络图片", ret["urls"]["regular"])
+    await session.send_msg({"type": "image", "url": ret["urls"]["regular"]}, "\n".join([
+        "Title: " + ret["title"],
+        "Author: " + ret["author"],
+        "Tags: " + ", ".join(ret["tags"]),
+        "ImgUrl: " + ret["urls"]["original"],
     ]))
 
 
+@pcqq.on_command("点歌", prompt="请发送要点的歌名")
+async def QQMusic(session: pcqq.Session):
+    await session.send_msg({"type": "music", "keyword": session.matched})
+
+
 @pcqq.on_regex(r"^禁言\[PQ:at,qq=(\d{6,11})\] (\d{1,7})$")
-def ShutUp(session: pcqq.Session):
-    uid, time = session.matched[0]
-    pcqq.set_group_shutup(session.group_id, int(uid), int(time))
+async def ShutUp(session: pcqq.Session):
+    qq, secs = session.matched[0]
+    await pcqq.set_group_shutup(session.group_id, int(qq), int(secs))
 
+@pcqq.on_regex(r"^改名\[PQ:at,qq=(\d{6,11})\] (.+?)$")
+async def ShutUp(session: pcqq.Session):
+    qq, nickname = session.matched[0]
+    await pcqq.set_group_card(session.group_id, int(qq), nickname)
 
-@pcqq.on_command("运行代码", prompt="请提交python3代码")
-def RunCode(session: pcqq.Session):
-    request = urllib.request.Request(
-        method="POST",
-        url="https://tool.runoob.com/compile2.php",
-        data=urllib.parse.urlencode({
-            "code":     session.matched,
-            "token":    "4381fe197827ec87cbac9552f14ec62a",
-            "stdin":    "",
-            "language": "15",
-            "fileext":  "py3",
-        }).encode()
-    )
-    with urllib.request.urlopen(request) as rsp:
-        ret = json.loads(rsp.read())
-        session.send_msg((ret["output"]+ret["errors"]).strip())
-
-
-@pcqq.on_commands(["点歌", "qq点歌", "QQ点歌"], prompt="请说出你要点的歌名")
-def PlayMusic(session: pcqq.Session):
-    session.send_msg("[PQ:music,keyword=%s]" % (session.matched))
-
-
-# 不填入账密信息代表使用扫码登录
 pcqq.run_bot()

@@ -28,7 +28,7 @@ def _convert_topx(value):
             raise ValueError("unknown unit type: %s" % unit)
 
 
-def img_size_get(im_data: bytes):
+def img_size(im_data: bytes):
     """
     Return (width, height) for a given img file content
     no requirements

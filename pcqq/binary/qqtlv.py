@@ -1,3 +1,4 @@
+import pcqq.const as const
 import pcqq.utils as utils
 import pcqq.binary as binary
 
@@ -10,6 +11,20 @@ def _tlv(cmd: str, bin: bytes) -> bytes:
     writer.write(bin)
 
     return writer.clear()
+
+
+def tlv004() -> bytes:
+    """
+    TLV_0004_QRLogin
+
+    """
+    writer = binary.Writer()
+
+    writer.write_hex("00 00")
+    writer.write_int16(8)
+    writer.write(b'qr_login')
+
+    return _tlv("00 04", writer.clear())
 
 
 def tlv112(token: bytes) -> bytes:
@@ -30,12 +45,12 @@ def tlv30f() -> bytes:
     """
     TLV_030F_ComputerName
 
-    :param pc_name: Name of the Login Computer
-
     """
     writer = binary.Writer()
 
+    # ComputerName Length
     writer.write_int16(15)
+    # ComputerName Data
     writer.write_hex("44 61 77 6E 4E 69 67 68 74 73 2D 50 43 51 51")
 
     return _tlv("03 0F", writer.clear())
@@ -50,12 +65,13 @@ def tlv005(uin: int) -> bytes:
     """
     writer = binary.Writer()
 
-    writer.write_hex("00 02")
+    writer.write_hex("00 02")   # Tlv Version
     writer.write_int32(uin)
 
     return _tlv("00 05", writer.clear())
 
-def tlv303(token:bytes)->bytes:
+
+def tlv303(token: bytes) -> bytes:
     """
     TLV_0303_UnknownTag
 
@@ -71,7 +87,7 @@ def tlv303(token:bytes)->bytes:
 
 def tlv006(
     uin: int,
-    tgtgt_key: bytes,
+    tgt_key: bytes,
     md5_once: bytes,
     md5_twice: bytes,
     login_time: bytes,
@@ -85,7 +101,7 @@ def tlv006(
 
     :param uin: QQ Number
 
-    :param tgtgt_key: TGTGTKey
+    :param tgt_key: TGTKey
 
     :param md5_once: The password MD5 is encrypted once
 
@@ -108,17 +124,18 @@ def tlv006(
         writer.write(utils.randbytes(4))
         writer.write_hex("00 02")
         writer.write_int32(uin)
-        writer.write_hex("00 00 04 4C")
-        writer.write_hex("00 00 00 01")
-        writer.write_hex("00 00 15 51")
-        writer.write_hex("00 00 00")
+        writer.write_hex(const.SSO_VERSION)  # SSO Version
+        writer.write_hex(const.SERVICEID)  # ServiceId
+        writer.write_hex(const.CLIENT_VERSION)  # Client Version
+        writer.write_hex("00 00")
+        writer.write_hex("00")  # Don't remember password
         writer.write(md5_once)
         writer.write(login_time)
         writer.write_hex("00 00 00 00 00 00 00 00 00 00 00 00 00")
         writer.write(local_ip)
         writer.write_hex("00 00 00 00 00 00 00 00 00 10")
         writer.write(computer_id)
-        writer.write(tgtgt_key)
+        writer.write(tgt_key)
 
     tea = binary.QQTea(md5_twice)
     return _tlv("00 06", tea.encrypt(writer.clear()))
@@ -131,9 +148,21 @@ def tlv015() -> bytes:
     """
     writer = binary.Writer()
 
-    writer.write_hex("00 01 01 74 83 F2 C3 00 10 14 FE 77 FC")
-    writer.write_hex("00 00 00 00 00 00 00 00 00 00 00 00")
-    writer.write_hex("02 17 65 6E 9D 00 10 78 8A 33 DD 00 76 A1 78 EB 8E 5B BB FF 17 D0 10")
+    writer.write_hex("00 01")   # wSubVer
+
+    writer.write_byte(1)
+    writer.write_hex("74 83 F2 C3")  # CRC-32 ComputerGuid
+    writer.write_int16(16)  # ComputerGuid Length
+
+    # ComputerGuid Data
+    writer.write_hex("14 FE 77 FC 00 00 00 00 00 00 00 00 00 00 00 00")
+
+    writer.write_byte(2)
+    writer.write_hex("17 65 6E 9D")  # CRC-32 ComputerGuidEX
+    writer.write_int16(16)  # ComputerGuidEX Length
+
+    # ComputerGuidEX Data
+    writer.write_hex("78 8A 33 DD 00 76 A1 78 EB 8E 5B BB FF 17 D0 10")
 
     return _tlv("00 15", writer.clear())
 
@@ -145,15 +174,9 @@ def tlv01a(tgtkey: bytes) -> bytes:
     :param tgtkey: Tgtkey
 
     """
-    writer = binary.Writer()
 
-    writer.write_hex("00 01 01 74 83 F2 C3 00 10 14 FE 77 FC")
-    writer.write_hex("00 00 00 00 00 00 00 00 00 00 00 00")
-    writer.write_hex(
-        "02 17 65 6E 9D 00 10 78 8A 33 DD 00 76 A1 78 EB 8E 5B BB FF 17 D0 10")
-        
     tea = binary.QQTea(tgtkey)
-    return _tlv("00 1A", tea.encrypt(writer.clear()))
+    return _tlv("00 1A", tea.encrypt(tlv015()))
 
 
 def tlv018(uin: int, redirect_times: int) -> bytes:
@@ -167,7 +190,10 @@ def tlv018(uin: int, redirect_times: int) -> bytes:
     """
     writer = binary.Writer()
 
-    writer.write_hex("00 01 00 00 04 4C 00 00 00 01 00 00 15 51")
+    writer.write_hex("00 01")   # wSubVer
+    writer.write_hex(const.SSO_VERSION)  # SSO Version
+    writer.write_hex(const.SERVICEID)  # ServiceId
+    writer.write_hex(const.CLIENT_VERSION)  # Client Version
     writer.write_int32(uin)
     writer.write_int16(redirect_times)
     writer.write_hex("00 00")
@@ -182,13 +208,32 @@ def tlv019() -> bytes:
     """
     writer = binary.Writer()
 
-    writer.write_hex("00 01")
-    writer.write_hex("00 00 04 56")
-    writer.write_hex("00 00 00 01")
-    writer.write_hex("00 00 16 03")
+    writer.write_hex("00 01")   # wSubVer
+    writer.write_hex(const.SSO_VERSION)  # SSO Version
+    writer.write_hex(const.SERVICEID)  # ServiceId
+    writer.write_hex(const.CLIENT_VERSION)  # Client Version
     writer.write_hex("00 00")
 
     return _tlv("00 19", writer.clear())
+
+
+def tlv305() -> bytes:
+    """
+    Tlv_0305_QRCodeParams
+
+    """
+    writer = binary.Writer()
+
+    writer.write_hex("00 00 00 00")
+    writer.write_hex("00 00 00 05")
+    writer.write_hex("00 00 00 04")
+    writer.write_hex("00 00 00 00")
+    writer.write_hex("00 00 00 48")
+    writer.write_hex("00 00 00 02")
+    writer.write_hex("00 00 00 02")
+    writer.write_hex("00 00")
+
+    return _tlv("03 05", writer.clear())
 
 
 def tlv114() -> bytes:
@@ -198,9 +243,9 @@ def tlv114() -> bytes:
     """
     writer = binary.Writer()
 
-    writer.write_hex("01 03")
-    writer.write_hex("00 19")
-    writer.write_hex("02 F0 3C 70 7B 85 60 78 04 0F 8F 26 3D 43 1F 66 5E F3 6C 5D C0 45 AD 61 A6")
+    writer.write_hex(const.EDCH_VERSION)   # Edch Version
+    writer.write_int16(25)   # PublicKey Length
+    writer.write_hex(const.PUBLICKEY)   # PublicKey Data
 
     return _tlv("01 14", writer.clear())
 
@@ -249,7 +294,15 @@ def tlv313() -> bytes:
     """
     writer = binary.Writer()
 
-    writer.write_hex("01 01 02 00 10 EE 47 7F A4 BC D6 EE 65 02 65 4D E9 43 38 4C 3D 00 00 00 EB")
+    writer.write_hex("01")
+    writer.write_byte(1)    # GUID_Ex Count
+
+    writer.write_hex("02")  # GUID_Ex Index
+    writer.write_int16(16)  # GUID_Ex Length
+    # GUID_Ex Data
+    writer.write_hex("EE 47 7F A4 BC D6 EE 65 02 65 4D E9 43 38 4C 3D")
+
+    writer.write_hex("00 00 00 EB")  # System Tick
 
     return _tlv("03 13", writer.clear())
 
@@ -339,9 +392,11 @@ def tlv00c(server_ip: bytes) -> bytes:
     """
     writer = binary.Writer()
 
-    writer.write_hex("00 02 00 01 00 00 00 00 00 00 00 00")
+    writer.write_int16(2)
+    writer.write_hex("00 01 00 00 00 00 00 00 00 00")
     writer.write(server_ip)
-    writer.write_hex("00 50 00 00 00 00")
+    writer.write_int16(80)
+    writer.write_hex("00 00 00 00")
 
     return _tlv("00 0C", writer.clear())
 
@@ -366,9 +421,17 @@ def tlv105() -> bytes:
     """
     writer = binary.Writer()
 
-    writer.write_hex("00 01 01 02 00 14 01 01 00 10")
+    writer.write_int16(1)
+    writer.write_hex("01 02")
+
+    writer.write_int16(20)
+    writer.write_hex("01 01")
+    writer.write_int16(16)
     writer.write(utils.randbytes(16))
-    writer.write_hex("00 14 01 02 00 10")
+
+    writer.write_int16(20)
+    writer.write_hex("01 02")
+    writer.write_int16(16)
     writer.write(utils.randbytes(16))
 
     return _tlv("01 05", writer.clear())
@@ -382,20 +445,39 @@ def tlv10b() -> bytes:
     writer = binary.Writer()
 
     writer.write_hex("00 02")
-    writer.write(utils.randbytes(17))
-    writer.write_hex("10 00 00 00 00 00 00 00")
-    writer.write_hex("02 00 63 3E 00 63 02 04 00 03 07 00 04 00 49 F5 00 00 00 00 78 8A 33 DD 00 76 A1 78 EB 8E 5B BB FF 17 D0 10")
-    writer.write_hex("01 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00")
-    writer.write_hex("01 00 00 00")
-    writer.write_hex("01 00 00 00")
-    writer.write_hex("01 00 00 00")
-    writer.write_hex("01 00 FE 26 81 75 EC 2A 34 EF")
-    writer.write_hex("02 3E 50 39 6D B1 AF CC 9F EA 54 E1 70 CC 6C 9E 4E 63 8B 51 EC 7C 84 5C 68 00 00 00 00")
+    writer.write(utils.randbytes(17))   # (Random)ClientMd5 + QDFlag
+    writer.write_hex("10 00 00 00 00 00 00 00 02")
+
+    writer.write_hex("00 63")
+    writer.write_hex("3E 00 63 02")
+    writer.write_hex(const.DWQD_VERSION)
+    writer.write_hex("00 04 00")
+    writer.write(utils.randbytes(2))
+    writer.write_hex("00 00 00 00")
+    writer.write(utils.randbytes(16))
+
+    writer.write_hex("01 00")
+    writer.write_hex("00 00 00 00")
+    writer.write_hex("00 00")
+    writer.write_hex("00 00 00 00 00 00 00 00")
+
+    writer.write_hex("00 00 00 01")
+    writer.write_hex("00 00 00 01")
+    writer.write_hex("00 00 00 01")
+    writer.write_hex("00 00 00 01")
+    writer.write_hex("00 FE 26 81 75 EC 2A 34 EF")
+
+    # QDDATA
+    writer.write_hex("02 3E 50 39 6D B1 AF CC 9F EA 54 E1")
+    writer.write_hex("70 CC 6C 9E 4E 63 8B 51 EC 7C 84 5C")
+
+    writer.write_hex("68")
+    writer.write_hex("00 00 00 00")
 
     return _tlv("01 0B", writer.clear())
 
 
-def tlv02d() -> bytes:
+def tlv02d(local_ip: bytes) -> bytes:
     """
     TLV_002D_LocalIP
 
@@ -403,6 +485,6 @@ def tlv02d() -> bytes:
     writer = binary.Writer()
 
     writer.write_hex("00 01")
-    writer.write_hex("C0 A8 74 83")
+    writer.write(local_ip)
 
     return _tlv("00 2D", writer.clear())

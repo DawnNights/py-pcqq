@@ -1,288 +1,173 @@
 import re
-
+import asyncio
 import pcqq.client as cli
-import pcqq.network as net
 import pcqq.logger as logger
-import pcqq.message as message
-from typing import List, Dict, Callable, Generator
 
 
-class Session:
-    msg_id: int = 0
-    timestamp: int = 0
+class BasePlugin:
+    def __init__(self, rules):
+        self.rules = rules
+        self.temp = ...
+        self.block = ...
+        self.handle = ...
+        self.priority = ...
 
-    self_id: int = 0
-    user_id: int = 0
-    group_id: int = 0
-    target_id: int = 0
+    def __call__(self, handle):
+        self.handle = handle
+        return self
 
-    matched: str = ""
-    message: str = ""
-    event_type: str = ""
-    msg_group: List[Dict] = []
+    def SetTemp(self, temp: bool):
+        self.temp = temp
+        return self
 
-    def send_msg(self, msg: str, escape: bool = True):
-        """
-        根据事件来源自动回复
+    def SetBlock(self, block: bool):
+        self.block = block
+        return self
 
-        :param msg: 发送的消息文本或PQ码
+    def SetPriority(self, priority=10):
+        self.priority = priority
+        return self
 
-        :param escape: 是否解析消息中的PQ码
-
-        """
-        if self.group_id:
-            self.send_group_msg(self.group_id, msg, escape)
-        else:
-            self.send_friend_msg(self.user_id, msg, escape)
-
-    def send_friend_msg(self, user_id: int, msg: str, escape: bool = True):
-        """
-        发送好友消息
-
-        :param user_id: 好友的账号
-
-        :param msg: 发送的消息文本或PQ码
-
-        :param escape: 是否解析消息中的PQ码
-
-        """
-        if escape:
-            cli.send_friend_msg(user_id, pqcode_escape(msg, self))
-        else:
-            cli.send_friend_msg(user_id, message.text(msg))
-
-        logger.info(f"发送好友消息: %s -> %s(%d)" % (
-            msg, cli.get_user_name(user_id), user_id
-        ))
-
-    def send_group_msg(self, group_id: int, msg: str, escape: bool = True):
-        """
-        发送群消息
-
-        :param group_id: 目标群号
-
-        :param msg: 发送的消息文本或PQ码
-
-        :param escape: 是否解析消息中的PQ码
-
-        """
-        if escape:
-            cli.send_group_msg(group_id, pqcode_escape(
-                msg, self), "[PQ:image" in msg)
-        else:
-            cli.send_group_msg(group_id, message.text(msg))
-
-        logger.info(f"发送群消息: %s -> %s(%d)" % (
-            msg, cli.get_group_name(group_id), group_id
-        ))
+# Builtin Plugin Rule
 
 
-def pqcode_escape(pqmsg: str, session: Session) -> bytes:
-    ret = bytes()
-    pqcodes = re.findall(r'\[PQ:\w+?.*?]', pqmsg)
-
-    for code in pqcodes:
-        idx = pqmsg.find(code)
-        ret += message.text(pqmsg[0:idx])
-        pqmsg = pqmsg[idx+len(code):]
-
-        ret += message.pqcode(
-            session=session,
-            typ=code[4:code.find(",")].lower(),
-            params=dict(re.findall(r',([\w\-.]+?)=([^,\]]+)', code))
-        )
-
-    return ret + message.text(pqmsg) if pqmsg else ret
+async def only_group(session):
+    return bool(session.group_id)
 
 
-class Plugin:
-    def __init__(self, session: Session) -> None:
-        self.session = session
+async def only_friend(session):
+    return not session.group_id and session.user_id
 
-    async def match(self):
-        for rule in self.rules:
-            ret = rule(self.session)
-            uid = next(ret)
 
-            if uid is False:
-                return False
-            elif uid is True:
-                continue
-            elif await net.waiter.wait(uid, ret):
-                logger.error(f'等待[{uid}]会话输入 -> 超时......')
-                return False
-        return True
+def check_at(user_id):
+    async def check_rule(session):
+        return {"type": "at", "qq": user_id} in session.raw_message
+    return check_rule
 
-    async def start_handle(self) -> bool:
-        if await self.match():
-            self.handle()
-            return True
+
+def check_type(*type_group):
+    async def check_rule(session):
+        return session.event_type in type_group
+    return check_rule
+
+
+def check_user(*uid_group):
+    async def check_rule(session):
+        return session.user_id in uid_group
+    return check_rule
+
+
+def check_group(*gid_group):
+    async def check_rule(session):
+        return session.group_id in gid_group
+    return check_rule
+
+
+def check_session(session_):
+    async def check_rule(session):
+        user_eq = session_.user_id == session.user_id
+        group_eq = session_.group_id == session.group_id
+        time_eq = session_.timestamp < session.timestamp
+        return user_eq and group_eq and time_eq
+    return check_rule
+
+
+def must_given(prompt):
+    async def wait_rule(session):
+        await session.send_msg({"type": "at", "qq": session.user_id}, prompt)
+
+        @on(check_session(session), temp=True, block=True, priority=-float("inf"))
+        async def wait_input(next_session):
+            session.matched = next_session.message
+
+        wait_times = 60
+        while not session.matched and wait_times:
+            await asyncio.sleep(0.5)
+            wait_times -= 1
+
+        try:
+            del cli.plugins[cli.plugins.index(wait_input)]
+            logger.error(f"等待会话 {session.user_id} 输入 -> 超时")
+        except ValueError:
+            logger.info(f"捕获会话 {session.user_id} 输入 -> {session.matched}")
+
+            return bool(session.matched)
+    return wait_rule
+
+# Builtin Plugin registrar
+
+
+def on(*rules, temp=False, block=False, priority=10):
+    plugin = BasePlugin(rules)
+    plugin.SetTemp(temp)
+    plugin.SetBlock(block)
+    plugin.SetPriority(priority)
+
+    cli.plugins.append(plugin)
+    cli.plugins.sort(key=lambda p: p.priority)
+    return plugin
+
+
+def on_full(key, *rules, **params):
+    async def full_rule(session):
+        return key == session.message
+    return on(*rules, full_rule, **params)
+
+
+def on_fulls(key_group, *rules, **params):
+    async def fulls_rule(session):
+        return session.message in key_group
+    return on(*rules, fulls_rule, **params)
+
+
+def on_keyword(key, *rules, **params):
+    async def key_rule(session):
+        return key in session.message
+    return on(*rules, key_rule, **params)
+
+
+def on_keywords(key_group, *rules, **params):
+    async def keys_rule(session):
+        for key in key_group:
+            if key in session.message:
+                return True
         return False
+    return on(*rules, keys_rule, **params)
 
 
-PluginPool: List[Plugin] = []
-
-
-def on(*rules: Callable[[Session], Generator], priority: int = 10, block: bool = False):
-    """
-    基础触发器
-
-    : param rules: 事件匹配规则集
-
-    : param priority: 插件优先级(数值越小级别越高)
-
-    : param block: 当前插件处理成功后是否阻断后续插件执行
-    """
-    def wrapper(func: Callable[[Session], None]):
-        name = func.__name__.title()
-        PluginPool.append(type(name, (Plugin, ), {
-            'block': block,
-            'rules': rules,
-            'priority': priority,
-            'handle': lambda p: func(p.session)
-        }))
-        PluginPool.sort(key=lambda p: p.priority)
-
-        logger.info(f'插件[{name}]已导入，当前共计{len(PluginPool)}组插件')
-    return wrapper
-
-
-def on_type(type: str, *rules: Callable[[Session], Generator], **kwargs):
-    '''
-    事件触发器
-
-    : param keyword: 匹配关键词
-
-    : param rules: 事件匹配规则集
-
-    : param prompt: 发送prompt语句并等待传参
-
-    : param priority: 插件优先级(数值越小级别越高)
-
-    : param block: 当前插件处理成功后是否阻断后续插件执行
-
-    匹配结果保留至session.matched
-
-    '''
-    def type_rule(session: Session):
-        yield type == session.event_type
-    return on(*rules, type_rule, **kwargs)
-
-def on_full(keyword: str, *rules: Callable[[Session], Generator], **kwargs):
-    '''
-    完全匹配触发器
-
-    : param keyword: 匹配关键词
-
-    : param rules: 事件匹配规则集
-
-    : param priority: 插件优先级(数值越小级别越高)
-
-    : param block: 当前插件处理成功后是否阻断后续插件执行
-
-    匹配结果保留至session.matched
-
-    '''
-    def full_rule(session: Session):
-        yield keyword == session.message
-    return on(*rules, full_rule, **kwargs)
-
-
-def on_fulls(keywords: List[str], *rules: Callable[[Session], Generator],  **kwargs):
-    '''
-    完全匹配组触发器
-
-    : param keywords: 匹配关键词组
-
-    : param rules: 事件匹配规则集
-
-    : param priority: 插件优先级(数值越小级别越高)
-
-    : param block: 当前插件处理成功后是否阻断后续插件执行
-
-    匹配结果保留至session.matched
-
-    '''
-    def fulls_rule(session: Session):
-        yield session.message in keywords
-    return on(*rules, fulls_rule, **kwargs)
-
-
-def on_command(cmd: str, *rules: Callable[[Session], Generator], prompt: str = '',  **kwargs):
-    '''
-    命令匹配触发器
-
-    : param cmd: 匹配命令
-
-    : param rules: 事件匹配规则集
-
-    : param prompt: 发送prompt语句并等待传参
-
-    : param priority: 插件优先级(数值越小级别越高)
-
-    : param block: 当前插件处理成功后是否阻断后续插件执行
-
-    匹配结果保留至session.matched
-
-    '''
-    def cmd_rule(session: Session):
+def on_command(cmd, *rules, prompt="", **params):
+    async def cmd_rule(session):
         if session.message.startswith(cmd):
             session.matched = session.message[len(cmd):].strip()
 
-            if not session.matched and prompt:
-                session.send_msg(f"[PQ:at,qq={session.user_id}]{prompt}")
-                session.matched = yield session.user_id
-            yield bool(session.matched)
-        yield False
-    return on(*rules, cmd_rule, **kwargs)
+        if session.matched == "" and prompt:
+            return await must_given(prompt)(session)
+
+        return bool(session.matched)
+
+    return on(*rules, cmd_rule, **params)
 
 
-def on_commands(cmds: List[str], *rules: Callable[[Session], Generator], prompt: str = '',  **kwargs):
-    '''
-    命令组匹配触发器
+def on_commands(cmd_group, *rules, prompt="", **params):
+    async def cmds_rule(session):
+        if session.matched:
+            return True
 
-    : param cmds: 匹配命令组
-
-    : param rules: 事件匹配规则集
-
-    : param prompt: 发送prompt语句并等待传参
-
-    : param priority: 插件优先级(数值越小级别越高)
-
-    : param block: 当前插件处理成功后是否阻断后续插件执行
-
-    匹配结果保留至session.matched
-
-    '''
-    def cmds_rule(session: Session):
-        for cmd in cmds:
+        for cmd in cmd_group:
             if session.message.startswith(cmd):
                 session.matched = session.message[len(cmd):].strip()
-                if not session.matched and prompt:
-                    session.send_msg(f"[PQ:at,qq={session.user_id}]{prompt}")
-                    session.matched = yield session.user_id
-                yield bool(session.matched)
-        yield False
-    return on(*rules, cmds_rule, **kwargs)
+
+            if session.matched == "" and prompt:
+                return await must_given(prompt)(session)
+
+        return bool(session.matched)
+
+    return on(*rules, cmds_rule, **params)
 
 
-def on_regex(pattern: str, *rules: Callable[[Session], Generator],  **kwargs):
-    '''
-    正则匹配触发器
-
-    : param pattern: 正则语句
-
-    : param rules: 事件匹配规则集
-
-    : param priority: 插件优先级(数值越小级别越高)
-
-    : param block: 当前插件处理成功后是否阻断后续插件执行
-
-    匹配结果以list的形式保留至session.matched
-
-    '''
-    def reg_rule(session: Session):
+def on_regex(pattern, *rules, **params):
+    async def reg_rule(session):
         session.matched = re.findall(pattern, session.message)
-        yield bool(session.matched)
 
-    return on(*rules, reg_rule, **kwargs)
+        return bool(session.matched)
+    return on(*rules, reg_rule, **params)
