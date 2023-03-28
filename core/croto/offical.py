@@ -6,7 +6,8 @@ def ulong_overflow(val):
     MAX = 2147483647
     if not -MAX-1 <= val <= MAX:
         val = (val + (MAX + 1)) % (2 * (MAX + 1)) - MAX - 1
-    return ctypes.c_ulong(val).value
+    # return ctypes.c_ulong(val).value
+    return ctypes.c_uint(val).value
 
 
 def offical(data, key):
